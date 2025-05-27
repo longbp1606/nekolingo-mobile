@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 
-export default function Sample() {
+export default function SampleLayout() {
     return (
         <View
             style={{
@@ -9,7 +9,7 @@ export default function Sample() {
                 alignItems: "center",
             }}
         >
-            <Text>Sample</Text>
+            <Text>Sample screen</Text>
         </View>
-    )
+    );
 }
