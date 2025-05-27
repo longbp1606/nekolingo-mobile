@@ -1,9 +1,7 @@
-import { Stack } from "expo-router";
+import AppNavigation from "./navigation";
 
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="(sample)" />
-    </Stack>
+    <AppNavigation />
   );
 }
