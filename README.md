@@ -1,8 +1,25 @@
-# Welcome to your Expo app 👋
+# Nekolingo - Language Learning App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Nekolingo is a mobile language learning application inspired by Duolingo, built with React Native and Expo. This app provides an interactive way to learn new languages through engaging lessons, practice exercises, and gamified features.
 
-## Get started
+## Features
+
+- **Multiple Language Support**: Learn Japanese, Spanish, French, German, and more
+- **Interactive Lessons**: Engage with various exercise types including multiple choice, typing answers, and more
+- **Progress Tracking**: Track your learning streak, XP, and level progression
+- **Gamification**: Earn XP, complete achievements, and compete on leaderboards
+- **User Profiles**: Create and customize your profile
+- **Daily Goals**: Set and track daily language learning goals
+
+## Tech Stack
+
+- **Framework**: React Native with Expo
+- **Routing**: Expo Router for file-based routing
+- **State Management**: Redux Toolkit
+- **Styling**: React Native StyleSheet
+- **API Communication**: Axios
+
+## Getting Started
 
 1. Install dependencies
 
@@ -16,12 +33,11 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+You can open the app in:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Android Emulator
+- iOS Simulator
+- Expo Go on your physical device
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
