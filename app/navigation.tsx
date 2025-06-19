@@ -29,27 +29,13 @@ export default function AppNavigation() {
       }}
     >
       {/* Auth flow screens */}
-      <Stack.Screen
+      {/* <Stack.Screen
         name="auth/login"
         options={{
           title: "Login",
           headerShown: false,
         }}
-      />
-      <Stack.Screen
-        name="auth/register"
-        options={{
-          title: "Create Account",
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="auth/forgot-password"
-        options={{
-          title: "Reset Password",
-          headerShown: false,
-        }}
-      />
+      /> */}
 
       {/* Onboarding screens */}
       <Stack.Screen
@@ -73,55 +59,6 @@ export default function AppNavigation() {
         options={{
           title: "Home",
           headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="lessons/index"
-        options={{
-          title: "Lessons",
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen
-        name="lessons/detail"
-        options={{
-          title: "Lesson",
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen
-        name="practice/index"
-        options={{
-          title: "Practice",
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen
-        name="profile/index"
-        options={{
-          title: "Profile",
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen
-        name="leaderboard/index"
-        options={{
-          title: "Leaderboard",
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen
-        name="achievements/index"
-        options={{
-          title: "Achievements",
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen
-        name="settings/index"
-        options={{
-          title: "Settings",
-          headerShown: true,
         }}
       />
 
