@@ -22,7 +22,7 @@ interface LanguageOption {
 
 const languages: LanguageOption[] = [
   { code: "ja", name: "Japanese", flag: "🇯🇵" },
-  { code: "es", name: "Spanish", flag: "🇪🇸" },
+  { code: "en", name: "English", flag: "🇺🇸" },
 ];
 
 export default function LanguageSelectionScreen() {
