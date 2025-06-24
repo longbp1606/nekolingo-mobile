@@ -1,9 +1,9 @@
 // App theme and colors
 export const Colors = {
-  primary: "#58CC02", // Duolingo green
-  secondary: "#FFC800", // Yellow for buttons and highlights
-  tertiary: "#FF4B4B", // Red for wrong answers
-  quaternary: "#1CB0F6", // Blue for tips and certain UI elements
+  primary: "#00C2D1", // Duolingo green
+  secondary: "#F9E900", // Yellow for buttons and highlights
+  tertiary: "#ED33B9", // Red for wrong answers
+  quaternary: "#F6AF65", // Blue for tips and certain UI elements
 
   background: "#FFFFFF",
   card: "#F7F7F7",
