@@ -1,0 +1,396 @@
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { Button, Card, ProgressBar } from "../../components";
+import { Colors, Sizes } from "../../constants";
+import { AppDispatch, RootState } from "../../stores";
+import { fetchLessonById } from "../../stores/lessonsSlice";
+
+export default function ExerciseScreen() {
+  const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { currentLesson, loading, error } = useSelector(
+    (state: RootState) => state.lessons
+  );
+
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+
+  useEffect(() => {
+    if (lessonId) {
+      dispatch(fetchLessonById(lessonId));
+    }
+  }, [dispatch, lessonId]);
+
+  const currentExercise = currentLesson?.exercises[currentExerciseIndex];
+  const totalExercises = currentLesson?.exercises.length || 0;
+  const progress =
+    totalExercises > 0 ? (currentExerciseIndex + 1) / totalExercises : 0;
+
+  const handleAnswerSelect = (answer: string) => {
+    if (!isAnswerSubmitted) {
+      setSelectedAnswer(answer);
+    }
+  };
+
+  const handleSubmitAnswer = () => {
+    if (!selectedAnswer || !currentExercise) return;
+
+    setIsAnswerSubmitted(true);
+
+    const isCorrect = Array.isArray(currentExercise.correctAnswer)
+      ? currentExercise.correctAnswer.includes(selectedAnswer)
+      : currentExercise.correctAnswer === selectedAnswer;
+
+    if (isCorrect) {
+      setCorrectAnswers((prev) => prev + 1);
+    }
+
+    // Show result for 1.5 seconds before moving to next
+    setTimeout(() => {
+      if (currentExerciseIndex < totalExercises - 1) {
+        setCurrentExerciseIndex((prev) => prev + 1);
+        setSelectedAnswer(null);
+        setIsAnswerSubmitted(false);
+      } else {
+        // Exercise completed, show results
+        handleExerciseComplete();
+      }
+    }, 1500);
+  };
+
+  const handleExerciseComplete = () => {
+    const score = Math.round((correctAnswers / totalExercises) * 100);
+    const xpEarned = Math.round(
+      (correctAnswers / totalExercises) * (currentLesson?.xpReward || 10)
+    );
+    const perfectLesson = correctAnswers === totalExercises;
+    const streakIncreased = correctAnswers / totalExercises >= 0.7; // 70% accuracy needed for streak
+
+    router.push({
+      pathname: "/exercise/result" as any,
+      params: {
+        lessonId: lessonId || "1",
+        score: score.toString(),
+        totalQuestions: totalExercises.toString(),
+        correctAnswers: correctAnswers.toString(),
+        xpEarned: xpEarned.toString(),
+        perfectLesson: perfectLesson.toString(),
+        streakIncreased: streakIncreased.toString(),
+      },
+    });
+  };
+
+  const getAnswerStyle = (answer: string) => {
+    if (!isAnswerSubmitted) {
+      return [
+        styles.answerButton,
+        selectedAnswer === answer && styles.selectedAnswer,
+      ];
+    }
+
+    const isCorrect = Array.isArray(currentExercise?.correctAnswer)
+      ? currentExercise?.correctAnswer.includes(answer)
+      : currentExercise?.correctAnswer === answer;
+
+    if (isCorrect) {
+      return [styles.answerButton, styles.correctAnswer];
+    }
+
+    if (selectedAnswer === answer && !isCorrect) {
+      return [styles.answerButton, styles.wrongAnswer];
+    }
+
+    return [styles.answerButton, styles.disabledAnswer];
+  };
+
+  const getAnswerTextStyle = (answer: string) => {
+    if (!isAnswerSubmitted) {
+      return [
+        styles.answerText,
+        selectedAnswer === answer && styles.selectedAnswerText,
+      ];
+    }
+
+    const isCorrect = Array.isArray(currentExercise?.correctAnswer)
+      ? currentExercise?.correctAnswer.includes(answer)
+      : currentExercise?.correctAnswer === answer;
+
+    if (isCorrect) {
+      return [styles.answerText, styles.correctAnswerText];
+    }
+
+    if (selectedAnswer === answer && !isCorrect) {
+      return [styles.answerText, styles.wrongAnswerText];
+    }
+
+    return [styles.answerText, styles.disabledAnswerText];
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Exercise</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading exercise...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !currentLesson || !currentExercise) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Exercise</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || "Exercise not found"}</Text>
+          <Button
+            title="Go Back"
+            onPress={() => router.back()}
+            style={styles.goBackButton}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.progressContainer}>
+          <ProgressBar progress={progress} style={styles.progressBar} />
+          <Text style={styles.progressText}>
+            {currentExerciseIndex + 1} / {totalExercises}
+          </Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <Card style={styles.exerciseCard}>
+          <Text style={styles.questionText}>{currentExercise.question}</Text>
+
+          {currentExercise.options && (
+            <View style={styles.optionsContainer}>
+              {currentExercise.options.map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={getAnswerStyle(option)}
+                  onPress={() => handleAnswerSelect(option)}
+                  disabled={isAnswerSubmitted}
+                >
+                  <Text style={getAnswerTextStyle(option)}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {currentExercise.hints && currentExercise.hints.length > 0 && (
+            <View style={styles.hintContainer}>
+              <Text style={styles.hintLabel}>💡 Hint:</Text>
+              <Text style={styles.hintText}>{currentExercise.hints[0]}</Text>
+            </View>
+          )}
+        </Card>
+
+        <View style={styles.actionContainer}>
+          <Button
+            title={isAnswerSubmitted ? "Next" : "Submit"}
+            onPress={handleSubmitAnswer}
+            disabled={!selectedAnswer}
+            style={[
+              styles.submitButton,
+              !selectedAnswer && styles.disabledButton,
+            ]}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Sizes.md,
+    paddingTop: Sizes.md,
+    paddingBottom: Sizes.sm,
+  },
+  backButton: {
+    padding: Sizes.sm,
+    marginRight: Sizes.md,
+  },
+  backButtonText: {
+    fontSize: 24,
+    color: Colors.primary,
+    fontWeight: "bold",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.text,
+  },
+  progressContainer: {
+    flex: 1,
+    marginLeft: Sizes.md,
+  },
+  progressBar: {
+    height: 6,
+    marginBottom: Sizes.xs,
+  },
+  progressText: {
+    fontSize: Sizes.caption,
+    color: Colors.textLight,
+    textAlign: "right",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: Sizes.md,
+  },
+  exerciseCard: {
+    padding: Sizes.lg,
+    marginBottom: Sizes.md,
+  },
+  questionText: {
+    fontSize: Sizes.h3,
+    fontWeight: "600",
+    color: Colors.textDark,
+    marginBottom: Sizes.lg,
+    textAlign: "center",
+  },
+  optionsContainer: {
+    gap: Sizes.md,
+    marginBottom: Sizes.lg,
+  },
+  answerButton: {
+    backgroundColor: Colors.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    borderRadius: Sizes.sm,
+    padding: Sizes.md,
+    alignItems: "center",
+  },
+  selectedAnswer: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + "10",
+  },
+  correctAnswer: {
+    borderColor: Colors.success,
+    backgroundColor: Colors.success + "10",
+  },
+  wrongAnswer: {
+    borderColor: Colors.error,
+    backgroundColor: Colors.error + "10",
+  },
+  disabledAnswer: {
+    opacity: 0.5,
+  },
+  answerText: {
+    fontSize: Sizes.body,
+    color: Colors.textDark,
+    fontWeight: "500",
+  },
+  selectedAnswerText: {
+    color: Colors.primary,
+    fontWeight: "600",
+  },
+  correctAnswerText: {
+    color: Colors.success,
+    fontWeight: "600",
+  },
+  wrongAnswerText: {
+    color: Colors.error,
+    fontWeight: "600",
+  },
+  disabledAnswerText: {
+    color: Colors.textLight,
+  },
+  hintContainer: {
+    backgroundColor: Colors.info + "10",
+    padding: Sizes.md,
+    borderRadius: Sizes.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.info,
+  },
+  hintLabel: {
+    fontSize: Sizes.caption,
+    color: Colors.info,
+    fontWeight: "600",
+    marginBottom: Sizes.xs,
+  },
+  hintText: {
+    fontSize: Sizes.body,
+    color: Colors.textDark,
+  },
+  actionContainer: {
+    paddingBottom: Sizes.xl,
+  },
+  submitButton: {
+    backgroundColor: Colors.primary,
+  },
+  disabledButton: {
+    backgroundColor: Colors.border,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: Sizes.body,
+    color: Colors.textLight,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: Sizes.md,
+  },
+  errorText: {
+    fontSize: Sizes.body,
+    color: Colors.error,
+    textAlign: "center",
+    marginBottom: Sizes.md,
+  },
+  goBackButton: {
+    marginTop: Sizes.md,
+  },
+});

@@ -136,9 +136,9 @@ export default function HomeScreen() {
         {/* Navigation buttons */}
         <View style={styles.navButtons}>
           <Button
-            title="Practice"
+            title="Exercise"
             variant="secondary"
-            onPress={() => router.push("/(tabs)/practice")}
+            onPress={() => router.push("/(tabs)/exercise" as any)}
             style={styles.navButton}
           />
           <Button

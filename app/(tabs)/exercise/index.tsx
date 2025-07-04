@@ -2,11 +2,11 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors, Sizes } from "../../../constants";
 
-export default function ChestScreen() {
+export default function ExerciseScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Chest</Text>
+        <Text style={styles.title}>Exercise</Text>
         <Text style={styles.subtitle}>Coming Soon</Text>
       </View>
     </View>

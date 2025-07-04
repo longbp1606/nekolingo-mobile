@@ -12,8 +12,8 @@ interface BottomNavItem {
 
 const navItems: BottomNavItem[] = [
   { id: "home", icon: "🏠", label: "Home", route: "/(tabs)/home" },
-  { id: "chest", icon: "💎", label: "Chest", route: "/(tabs)/chest" },
-  { id: "practice", icon: "🏋️", label: "Practice", route: "/(tabs)/practice" },
+  { id: "streak", icon: "�", label: "Streak", route: "/(tabs)/streak" },
+  { id: "exercise", icon: "🏋️", label: "Exercise", route: "/(tabs)/exercise" },
   {
     id: "leaderboard",
     icon: "🏆",

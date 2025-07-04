@@ -29,8 +29,11 @@ export default function LessonDetailScreen() {
   }, [dispatch, id]);
 
   const handleStartLesson = () => {
-    // Navigate to the lesson practice screen
-    router.push(`/lessons/${id}/practice` as any);
+    // Navigate to the exercise screen with lesson data
+    router.push({
+      pathname: "/exercise/[lessonId]",
+      params: { lessonId: id },
+    } as any);
   };
 
   if (loading) {

@@ -12,8 +12,8 @@ export default function TabLayout() {
       tabBar={() => <BottomNavigation />} // Use our custom bottom navigation
     >
       <Tabs.Screen name="home/index" />
-      <Tabs.Screen name="chest/index" />
-      <Tabs.Screen name="practice/index" />
+      <Tabs.Screen name="streak/index" />
+      <Tabs.Screen name="exercise/index" />
       <Tabs.Screen name="leaderboard/index" />
       <Tabs.Screen name="membership/index" />
       <Tabs.Screen name="profile/index" />

@@ -7,9 +7,14 @@ export const ROUTES = {
   // Main App Routes
   HOME: "/(tabs)/home",
   LESSONS: "/lessons",
-  PRACTICE: "/(tabs)/practice",
+  EXERCISE: "/(tabs)/exercise",
+  STREAK: "/(tabs)/streak",
   LEADERBOARD: "/(tabs)/leaderboard",
   PROFILE: "/(tabs)/profile",
+
+  // Exercise Flow
+  EXERCISE_RESULT: "/exercise/result",
+  STREAK_CELEBRATION: "/streak/celebration",
 
   // Onboarding
   ONBOARDING: "/onboarding",

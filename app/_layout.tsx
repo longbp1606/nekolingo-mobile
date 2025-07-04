@@ -95,6 +95,29 @@ function RootLayoutNav() {
           }}
         />
 
+        {/* Exercise flow screens */}
+        <Stack.Screen
+          name="exercise/[lessonId]"
+          options={{
+            title: "Exercise",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="exercise/result"
+          options={{
+            title: "Exercise Result",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="streak/celebration"
+          options={{
+            title: "Streak Celebration",
+            headerShown: false,
+          }}
+        />
+
         {/* Sample screen - will be removed in final version */}
         <Stack.Screen
           name="(sample)"
