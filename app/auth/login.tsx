@@ -31,7 +31,7 @@ export default function LoginScreen() {
     try {
       await dispatch(loginUser({ email, password })).unwrap();
       // Navigate to home on success
-      router.push("/home");
+      router.push("/(tabs)/home");
     } catch (error) {
       // Error is handled in the redux store
       console.log("Login failed", error);

@@ -1,39 +1,22 @@
-import { usePathname } from "expo-router";
+import { Tabs } from "expo-router";
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomNavigation } from "../../components";
 
-interface TabLayoutProps {
-  children: React.ReactNode;
-}
-
-export default function TabLayout({ children }: TabLayoutProps) {
-  const pathname = usePathname();
-
-  // Don't show bottom navigation on auth or onboarding screens
-  const shouldShowBottomNav = ![
-    "/auth/login",
-    "/auth/register",
-    "/auth/forgot-password",
-    "/onboarding",
-    "/onboarding/language-selection",
-    "/(sample)",
-  ].some((path) => pathname.startsWith(path));
-
+export default function TabLayout() {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>{children}</View>
-      {shouldShowBottomNav && <BottomNavigation />}
-    </SafeAreaView>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { display: "none" }, // Hide default tab bar since we're using custom BottomNavigation
+      }}
+      tabBar={() => <BottomNavigation />} // Use our custom bottom navigation
+    >
+      <Tabs.Screen name="home/index" />
+      <Tabs.Screen name="chest/index" />
+      <Tabs.Screen name="practice/index" />
+      <Tabs.Screen name="leaderboard/index" />
+      <Tabs.Screen name="membership/index" />
+      <Tabs.Screen name="profile/index" />
+    </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-});

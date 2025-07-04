@@ -138,13 +138,13 @@ export default function HomeScreen() {
           <Button
             title="Practice"
             variant="secondary"
-            onPress={() => router.push("/practice")}
+            onPress={() => router.push("/(tabs)/practice")}
             style={styles.navButton}
           />
           <Button
             title="Leaderboard"
             variant="tertiary"
-            onPress={() => router.push("/leaderboard")}
+            onPress={() => router.push("/(tabs)/leaderboard")}
             style={styles.navButton}
           />
         </View>
