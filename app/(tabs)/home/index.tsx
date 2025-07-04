@@ -8,12 +8,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Card, ProgressBar } from "../../components";
-import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { fetchLessons } from "../../stores/lessonsSlice";
+import { Button, Card, ProgressBar } from "../../../components";
+import { Colors, Sizes } from "../../../constants";
+import { AppDispatch, RootState } from "../../../stores";
+import { fetchLessons } from "../../../stores/lessonsSlice";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -41,7 +40,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Header with user info */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -150,7 +149,7 @@ export default function HomeScreen() {
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

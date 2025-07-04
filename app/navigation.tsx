@@ -36,7 +36,6 @@ export default function AppNavigation() {
           headerShown: false,
         }}
       /> */}
-
       {/* Onboarding screens */}
       <Stack.Screen
         name="onboarding/index"
@@ -51,17 +50,14 @@ export default function AppNavigation() {
           title: "Choose a Language",
           headerShown: false,
         }}
-      />
-
-      {/* Main app screens */}
+      />{" "}
+      {/* Main app screens with tabs */}
       <Stack.Screen
-        name="home/index"
+        name="(tabs)"
         options={{
-          title: "Home",
           headerShown: false,
         }}
       />
-
       {/* Sample screen - will be removed in final version */}
       <Stack.Screen
         name="(sample)"

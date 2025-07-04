@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -40,7 +40,7 @@ export default function LanguageSelectionScreen() {
       dispatch(updateUserSettings({ selectedLanguage }));
 
       // Navigate to home screen
-      router.push("/home");
+      router.push("/(tabs)/home" as any);
     }
   };
 

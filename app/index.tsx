@@ -19,7 +19,7 @@ export default function Index() {
     }
 
     // Logged in with language, go to home
-    return "/home";
+    return "/(tabs)/home";
   };
 
   return <Redirect href={getInitialRoute()} />;
