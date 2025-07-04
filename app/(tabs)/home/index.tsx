@@ -34,7 +34,7 @@ export default function HomeScreen() {
 
   const navigateToLesson = (lessonId: string) => {
     router.push({
-      pathname: "/lessons/detail",
+      pathname: "/lessons/[id]",
       params: { id: lessonId },
     });
   };
