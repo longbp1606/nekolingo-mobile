@@ -1,36 +1,80 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { Colors, Sizes } from "../../../constants";
+import { StyleSheet, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { 
+  DailyPracticeCard, 
+  PracticeSection, 
+  PracticeItem 
+} from "../../../components/exercise";
 
 export default function ExerciseScreen() {
+  const handleUnlockPractice = () => {
+    console.log('Unlock practice pressed');
+    // Navigate to daily practice
+  };
+
+  const handlePracticeItemPress = (type: string) => {
+    console.log('Practice item pressed:', type);
+    // Navigate to specific practice type
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Exercise</Text>
-        <Text style={styles.subtitle}>Coming Soon</Text>
-      </View>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.headerGradient}>
+          <DailyPracticeCard
+            title="Luyện tập chuyên sâu"
+            subtitle="Tập trung ôn luyện những điểm còn yếu"
+            character="duo"
+            onUnlock={handleUnlockPractice}
+          />
+        </View>
+        
+        <View style={styles.content}>
+          <PracticeSection title="Luyện giao tiếp" badge="SUPER">
+            <PracticeItem
+              title="Luyện nói"
+              icon="🎤"
+              iconColor="#4CAF50"
+              onPress={() => handlePracticeItemPress('speaking')}
+            />
+            <PracticeItem
+              title="Luyện nghe"
+              icon="🔊"
+              iconColor="#2196F3"
+              onPress={() => handlePracticeItemPress('listening')}
+            />
+          </PracticeSection>
+          
+          <PracticeSection title="Góc học tập">
+            <PracticeItem
+              title="Các lỗi sai cũ"
+              icon="🔄"
+              iconColor="#FF9800"
+              onPress={() => handlePracticeItemPress('mistakes')}
+            />
+            <PracticeItem
+              title="Ôn luyện"
+              icon="📚"
+              iconColor="#F44336"
+              onPress={() => handlePracticeItemPress('review')}
+            />
+          </PracticeSection>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F7F7F7',
+  },
+  headerGradient: {
+    backgroundColor: '#2E7D32',
   },
   content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: Sizes.h1,
-    fontWeight: "bold",
-    color: Colors.textDark,
-    marginBottom: Sizes.sm,
-  },
-  subtitle: {
-    fontSize: Sizes.h4,
-    color: Colors.textLight,
+    paddingVertical: 20,
   },
 });
