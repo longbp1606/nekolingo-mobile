@@ -1,2 +1,2 @@
-export { DailyPracticeCard } from './DailyPracticeCard';
-export { PracticeSection, PracticeItem } from './PracticeSection';
+export { DailyPracticeCard } from "./DailyPracticeCard";
+export { PracticeItem, PracticeSection } from "./PracticeSection";

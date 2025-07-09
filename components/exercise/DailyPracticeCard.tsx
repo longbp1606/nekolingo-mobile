@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface DailyPracticeCardProps {
   title: string;
@@ -8,25 +8,30 @@ interface DailyPracticeCardProps {
   onUnlock?: () => void;
 }
 
-export function DailyPracticeCard({ title, subtitle, character, onUnlock }: DailyPracticeCardProps) {
+export function DailyPracticeCard({
+  title,
+  subtitle,
+  character,
+  onUnlock,
+}: DailyPracticeCardProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Ôn tập hàng ngày</Text>
-      
+
       <View style={styles.cardContainer}>
         <View style={styles.contentContainer}>
           <View style={styles.badgeContainer}>
             <Text style={styles.badgeText}>SUPER</Text>
           </View>
-          
+
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
-          
+
           <TouchableOpacity style={styles.unlockButton} onPress={onUnlock}>
             <Text style={styles.unlockButtonText}>MỞ KHOÁ</Text>
           </TouchableOpacity>
         </View>
-        
+
         {character && (
           <View style={styles.characterContainer}>
             <View style={styles.characterCircle}>
@@ -45,55 +50,55 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 20,
   },
   cardContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 20,
     padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   contentContainer: {
     flex: 1,
   },
   badgeContainer: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: 12,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: "rgba(255, 255, 255, 0.9)",
     marginBottom: 16,
   },
   unlockButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   unlockButtonText: {
-    color: '#1976D2',
+    color: "#1976D2",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   characterContainer: {
     marginLeft: 20,
@@ -102,11 +107,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   characterEmoji: {
     fontSize: 40,
