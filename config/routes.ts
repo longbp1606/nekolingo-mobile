@@ -11,6 +11,7 @@ export const ROUTES = {
   STREAK: "/(tabs)/streak",
   LEADERBOARD: "/(tabs)/leaderboard",
   PROFILE: "/(tabs)/profile",
+  ALLACHIEVEMENT: "/allachievement",
 
   // Exercise Flow
   EXERCISE_RESULT: "/exercise/result",
