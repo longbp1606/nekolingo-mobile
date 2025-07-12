@@ -117,7 +117,7 @@ const LeaderboardScreen = () => {
 
   const getRankColor = (rank: any) => {
     switch (rank) {
-      case 1: return theme.color.lightOrange;
+      case 1: return '#FFD700';
       case 2: return '#c0c0c0';
       case 3: return '#cd7f32';
       default: return theme.color.green;
