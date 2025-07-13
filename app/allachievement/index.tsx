@@ -9,7 +9,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import AchievementList from './../../../components/AchievementList';
+import AchievementList from './../../components/AchievementList';
 
 const AllAchievement: React.FC = () => {
     const router = useRouter();

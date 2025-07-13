@@ -1,24 +1,236 @@
+import LessonModal from '@/components/LessonModal';
+import StatsBar from '@/components/StatsBar';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Image,
+  Dimensions,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
+  View
+} from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Card, ProgressBar } from "../../../components";
-import { Colors, Sizes } from "../../../constants";
 import { AppDispatch, RootState } from "../../../stores";
 import { fetchLessons } from "../../../stores/lessonsSlice";
 
-export default function HomeScreen() {
+interface ProgressCircleProps {
+  progress: number;
+  size?: number;
+  strokeWidth?: number;
+  status?: 'locked' | 'in-progress' | 'complete';
+  unitId?: number;
+}
+
+interface Lesson {
+  icon: keyof typeof Ionicons.glyphMap;
+  status: 'locked' | 'in-progress' | 'complete';
+  title: string;
+  lessonId?: string;
+}
+
+interface Unit {
+  id: number;
+  title: string;
+  subtitle: string;
+  lessons: Lesson[];
+}
+
+interface LessonCircleProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  status?: 'locked' | 'in-progress' | 'complete';
+  progress?: number;
+  size?: number;
+  unitId?: number;
+  title?: string;
+  onPress?: () => void;
+}
+
+const getUnitColor = (unitId: number) => {
+  const colors: { [key: number]: string } = {
+    1: '#00C2D1',
+    2: '#9C27B0',
+    3: '#4DAA02',
+    4: '#FF5722',
+    5: '#009EB2',
+    6: '#e100ffff',
+    7: '#FF4B4B',
+    8: '#4B4B4B',
+  };
+  return colors[unitId] || '#00C2D1';
+};
+
+const getLessonProps = (status: 'locked' | 'in-progress' | 'complete') => {
+  switch (status) {
+    case 'locked':
+      return { progress: 0, size: 60 };
+    case 'in-progress':
+      return { progress: 10, size: 70 };
+    case 'complete':
+      return { progress: 100, size: 80 };
+    default:
+      return { progress: 0, size: 60 };
+  }
+};
+
+const { width } = Dimensions.get('window');
+
+const ProgressCircle: React.FC<ProgressCircleProps> = ({
+  progress,
+  size = 90,
+  strokeWidth = 4,
+  status = 'locked',
+  unitId = 1
+}) => {
+  let strokeColor = '#e0e0e0';
+  if (status === 'complete') strokeColor = getUnitColor(unitId);
+  else if (status === 'in-progress') strokeColor = '#FFD700';
+
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (progress / 100) * circumference;
+
+  return (
+    <View style={[styles.progressCircleContainer, { width: size, height: size }]}>
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#e0e0e0"
+          strokeWidth={strokeWidth}
+        />
+        {progress > 0 && (
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        )}
+      </Svg>
+    </View>
+  );
+};
+
+const LessonCircle: React.FC<LessonCircleProps> = ({
+  icon,
+  status = 'locked',
+  progress = 0,
+  size = 70,
+  unitId = 1,
+  title = '',
+  onPress
+}) => {
+  const getCircleStyle = () => {
+    const baseStyle = {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      position: 'relative' as const,
+    };
+
+    switch (status) {
+      case 'complete':
+        return [
+          baseStyle,
+          styles.completeCircle,
+          {
+            backgroundColor: getUnitColor(unitId),
+          }
+        ];
+      case 'in-progress':
+        return [
+          baseStyle,
+          styles.inProgressCircle,
+          {
+            backgroundColor: '#FFD700',
+          }
+        ];
+      default:
+        return [
+          baseStyle,
+          styles.lockedCircle,
+          {
+            backgroundColor: '#e5e5e5',
+          }
+        ];
+    }
+  };
+
+  const getIconColor = () => {
+    switch (status) {
+      case 'complete':
+        return 'white';
+      case 'in-progress':
+        return 'white';
+      default:
+        return '#999';
+    }
+  };
+
+  return (
+    <View style={styles.lessonContainer}>
+      <View style={[styles.lessonWrapper, { width: size + 20, height: size + 20 }]}>
+        <ProgressCircle
+          progress={progress}
+          size={size + 20}
+          status={status}
+          unitId={unitId}
+        />
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={getCircleStyle()}
+            activeOpacity={0.8}
+            onPress={onPress}
+          >
+            <View style={[styles.topHighlight, {
+              width: size - 10,
+              height: (size - 10) / 2,
+              borderRadius: (size - 10) / 2,
+              top: 5,
+            }]} />
+
+            <Ionicons
+              name={icon}
+              size={size * 0.4}
+              color={getIconColor()}
+              style={{ zIndex: 10 }}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const HomeScreen: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.user);
-  const { lessons, loading } = useSelector((state: RootState) => state.lessons);
+  const { lessons } = useSelector((state: RootState) => state.lessons);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<{
+    icon: keyof typeof Ionicons.glyphMap;
+    status: 'locked' | 'in-progress' | 'complete';
+    title: string;
+    lessonId?: string;
+  } | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState(1);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     if (user) {
@@ -26,282 +238,401 @@ export default function HomeScreen() {
     }
   }, [dispatch, user]);
 
-  // Calculate streak progress
-  const streakProgress = user ? Math.min(user.streak / 30, 1) : 0;
+  const units: Unit[] = [
+    {
+      id: 1,
+      title: "Unit 1",
+      subtitle: "Use basic phrases, greet people",
+      lessons: [
+        // First 3 lessons use real data
+        {
+          icon: 'star',
+          status: 'complete',
+          title: lessons?.[0]?.title || 'Chào hỏi cơ bản',
+          lessonId: lessons?.[0]?.id || undefined
+        },
+        {
+          icon: 'checkmark-circle',
+          status: 'complete',
+          title: lessons?.[1]?.title || 'Giới thiệu bản thân',
+          lessonId: lessons?.[1]?.id || undefined
+        },
+        {
+          icon: 'barbell',
+          status: 'in-progress',
+          title: lessons?.[2]?.title || 'Dùng thì hiện tại để diễn tả cảm xúc',
+          lessonId: lessons?.[2]?.id || undefined
+        },
+        // Rest are fake data
+        { icon: 'lock-closed', status: 'locked', title: 'Hỏi thông tin cá nhân' },
+        { icon: 'book', status: 'locked', title: 'Từ vựng gia đình' },
+        { icon: 'trophy', status: 'locked', title: 'Bài tập tổng hợp' },
+        { icon: 'school', status: 'locked', title: 'Học từ vựng mở rộng' },
+        { icon: 'flag', status: 'locked', title: 'Kiểm tra cuối bài' },
+      ]
+    },
+    {
+      id: 2,
+      title: "Unit 2",
+      subtitle: "Talk about family and friends",
+      lessons: [
+        { icon: 'people', status: 'complete', title: 'Câu chuyện: Câu hỏi của Junior' },
+        { icon: 'heart', status: 'in-progress', title: 'Nói về tình cảm' },
+        { icon: 'home', status: 'locked', title: 'Mô tả ngôi nhà' },
+        { icon: 'gift', status: 'locked', title: 'Tặng quà và lời chúc' },
+        { icon: 'camera', status: 'locked', title: 'Chia sẻ kỷ niệm' },
+        { icon: 'balloon', status: 'locked', title: 'Tổ chức tiệc tùng' },
+        { icon: 'musical-notes', status: 'locked', title: 'Âm nhạc yêu thích' },
+        { icon: 'star', status: 'locked', title: 'Bài tập cuối khóa' },
+      ]
+    },
+    {
+      id: 3,
+      title: "Unit 3",
+      subtitle: "Describe places and directions",
+      lessons: [
+        { icon: 'map', status: 'complete', title: 'Đọc bản đồ' },
+        { icon: 'compass', status: 'in-progress', title: 'Hướng dẫn đường đi' },
+        { icon: 'car', status: 'locked', title: 'Phương tiện giao thông' },
+        { icon: 'airplane', status: 'locked', title: 'Du lịch máy bay' },
+        { icon: 'train', status: 'locked', title: 'Đi tàu hỏa' },
+        { icon: 'walk', status: 'locked', title: 'Đi bộ trong thành phố' },
+        { icon: 'restaurant', status: 'locked', title: 'Tìm nhà hàng' },
+        { icon: 'storefront', status: 'locked', title: 'Mua sắm' },
+      ]
+    }
+  ];
 
-  // Calculate daily goal progress
-  const dailyXpGoalProgress = user ? Math.min(user.xp / user.dailyGoal, 1) : 0;
+  const [currentUnit, setCurrentUnit] = useState(units[0]);
 
   const navigateToLesson = (lessonId: string) => {
-    router.push({
-      pathname: "/lessons/[id]",
-      params: { id: lessonId },
-    });
+    try {
+      router.push(`/lessons/${lessonId}`);
+    } catch (error) {
+      console.error('Navigation error (method 1):', error);
+
+      try {
+        router.push({
+          pathname: "/lessons/[id]",
+          params: { id: lessonId },
+        });
+      } catch (error2) {
+        console.error('Navigation error (method 2):', error2);
+
+        try {
+          router.navigate(`/lessons/${lessonId}`);
+        } catch (error3) {
+          console.error('Navigation error (method 3):', error3);
+
+          try {
+            router.push(`/lessons/${lessonId}`);
+          } catch (error4) {
+            console.error('All navigation methods failed:', error4);
+          }
+        }
+      }
+    }
+  };
+
+  const handleScroll = (event: any) => {
+    const scrollY = event.nativeEvent.contentOffset.y;
+    const unitHeight = 1000;
+    const unitIndex = Math.floor(scrollY / unitHeight);
+
+    if (unitIndex >= 0 && unitIndex < units.length && units[unitIndex].id !== currentUnit.id) {
+      setCurrentUnit(units[unitIndex]);
+    }
+  };
+
+  const handleLessonPress = (lesson: Lesson, unitId: number) => {
+    setSelectedLesson(lesson);
+    setSelectedUnitId(unitId);
+    setModalVisible(true);
+  };
+
+  const getSCurvePosition = (index: number) => {
+    const centerX = width / 2;
+    const amplitude = 80;
+    const verticalSpacing = 120;
+
+    const y = index * verticalSpacing + 50;
+    const normalizedIndex = index / 7;
+    const x = centerX + amplitude * Math.sin(normalizedIndex * Math.PI * 2.5);
+
+    return { x: x - 40, y };
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header with user info */}
-      <View style={styles.header}>
-        <View style={styles.userInfo}>
-          <Image
-            source={{
-              uri: user?.profilePicture || "https://via.placeholder.com/100",
-            }}
-            style={styles.avatar}
-          />
-          <View style={styles.userTextContainer}>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.userName}>{user?.name || "User"}</Text>
-          </View>
-        </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: getUnitColor(currentUnit.id) }]}>
+      <StatsBar />
 
-        <View style={styles.levelBadge}>
-          <Text style={styles.levelText}>Level {user?.level || 1}</Text>
-        </View>
+      <View style={[styles.header, { backgroundColor: getUnitColor(currentUnit.id) }]}>
+        <Text style={styles.headerTitle}>{currentUnit.title}</Text>
+        <Text style={styles.headerSubtitle}>{currentUnit.subtitle}</Text>
+        <TouchableOpacity style={styles.bookmarkButton} onPress={() => router.push("/lessons")}>
+          <Ionicons name="list" size={24} color="white" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* Daily progress */}
-        <Card style={styles.progressCard}>
-          <Text style={styles.sectionTitle}>Daily Goal</Text>
-          <View style={styles.progressContainer}>
-            <ProgressBar
-              progress={dailyXpGoalProgress}
-              color={Colors.quaternary}
-            />
-            <Text style={styles.progressText}>
-              {user?.xp || 0} / {user?.dailyGoal || 20} XP
-            </Text>
-          </View>
-        </Card>
-
-        {/* Streak */}
-        <Card style={styles.streakCard}>
-          <View style={styles.streakHeader}>
-            <Text style={styles.sectionTitle}>Your Streak</Text>
-            <Text style={styles.streakDays}>{user?.streak || 0} days</Text>
-          </View>
-          <ProgressBar progress={streakProgress} color={Colors.secondary} />
-          <Text style={styles.streakText}>
-            {streakProgress >= 1
-              ? "Amazing! You've reached a 30 day streak!"
-              : "Keep practicing daily to build your streak!"}
-          </Text>
-        </Card>
-
-        {/* Continue learning section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Continue Learning</Text>
-        </View>
-
-        {loading ? (
-          <Text style={styles.loadingText}>Loading lessons...</Text>
-        ) : lessons && lessons.length > 0 ? (
-          <View style={styles.lessonsContainer}>
-            {lessons.slice(0, 3).map((lesson) => (
-              <TouchableOpacity
-                key={lesson.id}
-                style={styles.lessonCard}
-                onPress={() => navigateToLesson(lesson.id)}
-              >
-                <Card variant="elevated" style={styles.lessonCardInner}>
-                  <View style={styles.lessonHeader}>
-                    <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                    {lesson.isCompleted && (
-                      <View style={styles.completedBadge}>
-                        <Text style={styles.completedText}>Completed</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.lessonDescription}>
-                    {lesson.description}
-                  </Text>
-                  <Text style={styles.lessonXP}>+{lesson.xpReward} XP</Text>
-                </Card>
-              </TouchableOpacity>
-            ))}
-
-            <Button
-              title="See all lessons"
-              variant="outline"
-              onPress={() => router.push("/lessons")}
-              style={styles.seeAllButton}
-            />
-          </View>
-        ) : (
-          <Text style={styles.noLessonsText}>No lessons available.</Text>
-        )}
-
-        {/* Navigation buttons */}
-        <View style={styles.navButtons}>
-          <Button
-            title="Exercise"
-            variant="secondary"
-            onPress={() => router.push("/(tabs)/exercise" as any)}
-            style={styles.navButton}
-          />
-          <Button
-            title="Leaderboard"
-            variant="tertiary"
-            onPress={() => router.push("/(tabs)/leaderboard")}
-            style={styles.navButton}
-          />
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
+        <View style={styles.content}>
+          {units.map((unit, unitIndex) => (
+            <View key={unit.id} style={styles.unitContainer}>
+              <View style={styles.lessonsContainer}>
+                {unit.lessons.map((lesson, lessonIndex) => {
+                  const position = getSCurvePosition(lessonIndex);
+                  const { progress, size } = getLessonProps(lesson.status);
+                  return (
+                    <View
+                      key={lessonIndex}
+                      style={[
+                        styles.lessonPositioned,
+                        {
+                          left: position.x,
+                          top: position.y,
+                        }
+                      ]}
+                    >
+                      <LessonCircle
+                        icon={lesson.icon}
+                        status={lesson.status}
+                        progress={progress}
+                        size={size}
+                        unitId={unit.id}
+                        title={lesson.title}
+                        onPress={() => handleLessonPress(lesson, unit.id)}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+              {unitIndex < units.length - 1 && (
+                <View style={styles.unitDivider} />
+              )}
+            </View>
+          ))}
         </View>
       </ScrollView>
-    </View>
+
+      <LessonModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        lesson={selectedLesson || { icon: 'star', status: 'locked', title: '' }}
+        unitId={selectedUnitId}
+        onStartLesson={(lessonId) => {
+          setModalVisible(false);
+          navigateToLesson(lessonId);
+        }}
+      />
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Sizes.md,
-    paddingVertical: Sizes.md,
-    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+    position: 'relative',
   },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
+  headerTitle: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Colors.card,
+  headerSubtitle: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 4,
+    opacity: 0.9,
   },
-  userTextContainer: {
-    marginLeft: Sizes.md,
+  bookmarkButton: {
+    position: 'absolute',
+    right: 20,
+    top: 25,
+    padding: 10,
+    borderRadius: 12,
+    borderColor: '#fff',
+    borderWidth: 1,
   },
-  welcomeText: {
-    fontSize: Sizes.caption,
-    color: "#fff",
-  },
-  userName: {
-    fontSize: Sizes.h4,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  levelBadge: {
-    backgroundColor: "#fff",
-    paddingVertical: Sizes.xs,
-    paddingHorizontal: Sizes.md,
-    borderRadius: 16,
-  },
-  levelText: {
-    color: Colors.primary,
-    fontWeight: "bold",
+  scrollView: {
+    flex: 1,
   },
   content: {
-    flex: 1,
-    padding: Sizes.md,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    alignItems: 'center',
+    paddingBottom: 50,
+    minHeight: 2500,
   },
-  progressCard: {
-    marginBottom: Sizes.md,
+  unitContainer: {
+    height: 1000,
+    marginBottom: 50,
+    width: '100%',
   },
-  progressContainer: {
-    marginTop: Sizes.sm,
+  unitDivider: {
+    position: 'absolute',
+    bottom: -40,
+    left: 40,
+    width: '80%',
+    height: 2,
+    backgroundColor: '#ddd',
+    borderRadius: 1,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  progressText: {
-    marginTop: Sizes.xs,
-    textAlign: "right",
-    fontSize: Sizes.caption,
-    color: Colors.textLight,
+
+  // Start Button
+  startButtonContainer: {
+    position: 'relative',
+    marginBottom: 40,
   },
-  streakCard: {
-    marginBottom: Sizes.lg,
+  startButtonShadow: {
+    position: 'absolute',
+    bottom: -8,
+    left: 4,
+    width: 120,
+    height: 20,
+    backgroundColor: '#58CC02',
+    borderRadius: 25,
+    zIndex: -1,
   },
-  streakHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Sizes.sm,
+  startButton: {
+    backgroundColor: '#00C2D1',
+    paddingHorizontal: 40,
+    paddingVertical: 12,
+    borderRadius: 25,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  streakDays: {
-    fontSize: Sizes.h4,
-    fontWeight: "bold",
-    color: Colors.secondary,
+  startButtonHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 25,
   },
-  streakText: {
-    marginTop: Sizes.xs,
-    fontSize: Sizes.caption,
-    color: Colors.textLight,
+  startText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    zIndex: 10,
   },
-  sectionHeader: {
-    marginVertical: Sizes.sm,
+
+  // Active Circle
+  activeCircleContainer: {
+    position: 'relative',
+    marginBottom: 50,
   },
-  sectionTitle: {
-    fontSize: Sizes.h4,
-    fontWeight: "bold",
-    color: Colors.textDark,
+  activeCircleShadow: {
+    position: 'absolute',
+    bottom: -12,
+    left: 6,
+    width: 80,
+    height: 25,
+    backgroundColor: '#58CC02',
+    borderRadius: 40,
+    zIndex: -1,
   },
-  loadingText: {
-    textAlign: "center",
-    marginVertical: Sizes.lg,
-    color: Colors.textLight,
+  activeCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#00C2D1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
   },
+  activeCircleHighlight: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    width: 70,
+    height: 35,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 35,
+  },
+
+  // Lesson Components
   lessonsContainer: {
-    marginBottom: Sizes.lg,
+    position: 'relative',
+    width: '100%',
+    height: 1200,
   },
-  lessonCard: {
-    marginBottom: Sizes.sm,
+  lessonPositioned: {
+    position: 'absolute',
   },
-  lessonCardInner: {
-    padding: Sizes.md,
+  lessonContainer: {
+    alignItems: 'center',
   },
-  lessonHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Sizes.xs,
+  lessonWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
   },
-  lessonTitle: {
-    fontSize: Sizes.h4,
-    fontWeight: "bold",
-    color: Colors.textDark,
+  buttonContainer: {
+    position: 'relative',
   },
-  completedBadge: {
-    backgroundColor: Colors.success,
-    paddingVertical: 2,
-    paddingHorizontal: Sizes.xs,
-    borderRadius: 4,
+
+  completeCircle: {
+    backgroundColor: '#00C2D1',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
-  completedText: {
-    color: "#fff",
-    fontSize: Sizes.small,
-    fontWeight: "bold",
+  inProgressCircle: {
+    backgroundColor: '#FFD700',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
-  lessonDescription: {
-    fontSize: Sizes.body,
-    color: Colors.textLight,
-    marginBottom: Sizes.sm,
+  lockedCircle: {
+    backgroundColor: '#e5e5e5',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
-  lessonXP: {
-    fontSize: Sizes.caption,
-    fontWeight: "bold",
-    color: Colors.quaternary,
+  topHighlight: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    zIndex: 1,
   },
-  seeAllButton: {
-    marginTop: Sizes.sm,
-  },
-  noLessonsText: {
-    textAlign: "center",
-    marginVertical: Sizes.lg,
-    color: Colors.textLight,
-  },
-  navButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: Sizes.lg,
-  },
-  navButton: {
-    flex: 1,
-    marginHorizontal: Sizes.xs,
+
+  // Progress Circle Styles
+  progressCircleContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
+
+export default HomeScreen;
