@@ -6,15 +6,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider, useDispatch } from "react-redux";
 import { Colors } from "../constants";
 import { AppDispatch, store } from "../stores";
-import { fetchCurrentUser } from "../stores/userSlice";
+import { loadStoredAuth } from "../stores/userSlice";
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    // Try to fetch the current user on app start
-    dispatch(fetchCurrentUser());
+    // Load stored authentication data on app start
+    dispatch(loadStoredAuth());
   }, [dispatch]);
 
   return (
@@ -109,6 +109,13 @@ function RootLayoutNav() {
           name="onboarding/goal-selection"
           options={{
             title: "Goal Selection",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="onboarding/register"
+          options={{
+            title: "Create Account",
             headerShown: false,
           }}
         />

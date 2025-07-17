@@ -17,7 +17,7 @@ const clearAsyncStorage = async () => {
 };
 
 export default function Index() {
-  const { user, token } = useSelector((state: RootState) => state.user);
+  const { user, token, isInitialized } = useSelector((state: RootState) => state.user);
   const { isCompleted: onboardingCompleted, isLoaded: onboardingLoaded } =
     useSelector((state: RootState) => state.onboarding);
   const router = useRouter();
@@ -25,8 +25,8 @@ export default function Index() {
   // Load onboarding state from AsyncStorage
   useOnboardingCheck();
 
-  // Show loading or return early if onboarding state hasn't loaded yet
-  if (!onboardingLoaded) {
+  // Show loading until both auth and onboarding data are loaded
+  if (!isInitialized || !onboardingLoaded) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading...</Text>

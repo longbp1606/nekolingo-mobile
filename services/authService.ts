@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './config';
+
 export interface User {
   id: string;
   name: string;
@@ -8,6 +10,11 @@ export interface User {
   xp: number;
   level: number;
   dailyGoal: number;
+  username?: string;
+  role?: number;
+  language_from?: string;
+  language_to?: string;
+  current_level?: number;
 }
 
 export interface LoginRequest {
@@ -21,86 +28,154 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface SetupRegisterRequest {
+  email: string;
+  password: string;
+  username?: string;
+  language_from: string;
+  language_to: string;
+  current_level: number;
+}
+
 export interface AuthResponse {
   user: User;
   token: string;
 }
 
-const authService = {
-  login: async (data: LoginRequest): Promise<AuthResponse> => {
-    // For demo purposes, we're returning mock data
-    // In a real app, you would make an API call like this:
-    // const response = await axios.post(`${API_BASE_URL}/auth/login`, data);
-    // return response.data;
+export interface ApiResponse<T> {
+  data: T;
+  error: any;
+  message: string;
+}
 
-    // Mock response
+export interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  role: number;
+}
+
+class AuthService {
+  private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    try {
+      console.log(`Making request to: ${API_BASE_URL}/api/auth${endpoint}`);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth${endpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
+
+      const data = await response.json();
+      console.log('API Response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  }
+
+  async login(data: LoginRequest): Promise<AuthResponse> {
+    const response = await this.makeRequest<TokenResponse>('/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    const tokenData = response.data;
+    
+    // Get user profile with the token
+    const userProfile = await this.getProfile(tokenData.accessToken);
+
     return {
-      user: {
-        id: "1",
-        name: "Test User",
-        email: data.email,
-        selectedLanguage: "ja",
-        streak: 5,
-        xp: 120,
-        level: 3,
-        dailyGoal: 20,
-      },
-      token: "mock-jwt-token",
+      user: userProfile,
+      token: tokenData.accessToken,
     };
-  },
+  }
 
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    // For demo purposes, we're returning mock data
-    // const response = await axios.post(`${API_BASE_URL}/auth/register`, data);
-    // return response.data;
+  async register(data: RegisterRequest): Promise<AuthResponse> {
+    // First, create basic account
+    await this.makeRequest('/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
+    });
 
-    // Mock response
+    // Then login to get tokens
+    return this.login({
+      email: data.email,
+      password: data.password,
+    });
+  }
+
+  async setupRegister(data: SetupRegisterRequest): Promise<void> {
+    await this.makeRequest('/setup-register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getProfile(token: string): Promise<User> {
+    const response = await this.makeRequest<any>('/profile', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const profile = response.data;
+    
+    // Map API response to our User interface
     return {
-      user: {
-        id: "1",
-        name: data.name,
-        email: data.email,
-        selectedLanguage: "ja",
-        streak: 0,
-        xp: 0,
-        level: 1,
-        dailyGoal: 20,
-      },
-      token: "mock-jwt-token",
+      id: profile._id || profile.id,
+      name: profile.username || profile.name || profile.email.split('@')[0],
+      email: profile.email,
+      selectedLanguage: profile.language_to || 'en',
+      streak: profile.streakDays || 0,
+      xp: profile.xp || 0,
+      level: profile.current_level || 1,
+      dailyGoal: profile.dailyGoal || 20,
+      username: profile.username,
+      role: profile.role,
+      language_from: profile.language_from,
+      language_to: profile.language_to,
+      current_level: profile.current_level,
     };
-  },
+  }
 
-  forgotPassword: async (email: string): Promise<{ success: boolean }> => {
-    // For demo purposes
-    // const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });
-    // return response.data;
-
+  async forgotPassword(email: string): Promise<{ success: boolean }> {
+    // API doesn't have forgot password endpoint yet, so return mock
+    console.log('Forgot password for:', email);
     return { success: true };
-  },
+  }
 
-  logout: async (): Promise<void> => {
-    // For demo purposes
-    // await axios.post(`${API_BASE_URL}/auth/logout`);
+  async logout(): Promise<void> {
+    // API doesn't have logout endpoint yet since tokens are stateless
     return;
-  },
+  }
 
-  getCurrentUser: async (): Promise<User | null> => {
-    // For demo purposes
-    // const response = await axios.get(`${API_BASE_URL}/auth/me`);
-    // return response.data;
+  async getCurrentUser(): Promise<User | null> {
+    // This would need a stored token to work
+    // For now, return null to indicate no stored session
+    return null;
+  }
 
-    // Mock user data
-    return {
-      id: "1",
-      name: "Test User",
-      email: "test@example.com",
-      selectedLanguage: "ja",
-      streak: 5,
-      xp: 120,
-      level: 3,
-      dailyGoal: 20,
-    };
-  },
-};
+  // Helper method to validate token
+  async validateToken(token: string): Promise<boolean> {
+    try {
+      await this.getProfile(token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
 
-export default authService;
+export default new AuthService();

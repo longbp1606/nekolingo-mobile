@@ -62,7 +62,7 @@ export default function GoalSelectionScreen() {
     if (selectedGoal) {
       dispatch(setGoal(selectedGoal));
       dispatch(completeOnboarding()); // Mark onboarding as completed
-      router.push("/auth/register" as any);
+      router.push("/onboarding/register" as any);
     }
   };
 
