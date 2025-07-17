@@ -68,7 +68,8 @@ export default function RegisterScreen() {
 
     try {
       await dispatch(registerUser({ name, email, password })).unwrap();
-      router.push("/onboarding/language-selection");
+      // Navigate to home (onboarding should already be completed)
+      router.push("/(tabs)/home" as any);
     } catch (error) {
       console.log("Registration failed", error);
     }

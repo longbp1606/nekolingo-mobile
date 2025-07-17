@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import lessonsReducer from "./lessonsSlice";
+import onboardingReducer from "./onboardingSlice";
 import userReducer from "./userSlice";
 
 export const store = configureStore({
   reducer: {
     user: userReducer,
     lessons: lessonsReducer,
+    onboarding: onboardingReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
