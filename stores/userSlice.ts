@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { authService } from "../services";
 import { User } from "../services/authService";
 
@@ -20,8 +20,8 @@ const initialState: UserState = {
 };
 
 // Token storage keys
-const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'user_data';
+const TOKEN_KEY = "auth_token";
+const USER_KEY = "user_data";
 
 // Load stored authentication data
 export const loadStoredAuth = createAsyncThunk(
@@ -114,16 +114,16 @@ export const fetchCurrentUser = createAsyncThunk(
     try {
       const state = getState() as { user: UserState };
       const token = state.user.token;
-      
+
       if (!token) {
         return rejectWithValue("No authentication token");
       }
 
       const user = await authService.getProfile(token);
-      
+
       // Update stored user data
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-      
+
       return user;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch user");
@@ -136,13 +136,13 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await authService.logout();
-      
+
       // Clear stored authentication data
       await Promise.all([
         AsyncStorage.removeItem(TOKEN_KEY),
         AsyncStorage.removeItem(USER_KEY),
       ]);
-      
+
       return null;
     } catch (error: any) {
       return rejectWithValue(error.message || "Logout failed");
@@ -229,7 +229,7 @@ const userSlice = createSlice({
         state.error = action.payload as string;
         state.isInitialized = true;
       })
-      
+
       // Login cases
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -297,5 +297,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { updateUserSettings, clearError, setInitialized } = userSlice.actions;
+export const { updateUserSettings, clearError, setInitialized } =
+  userSlice.actions;
 export default userSlice.reducer;

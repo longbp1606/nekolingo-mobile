@@ -1,14 +1,9 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, BackButton } from "../../components";
+import { BackButton, Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
 import { AppDispatch, RootState } from "../../stores";
 import { setupRegisterUser } from "../../stores/userSlice";
@@ -62,19 +57,21 @@ export default function OnboardingRegisterScreen() {
     }
 
     // Map onboarding data to API format
-    const language_from = 'vi'; // Default or from onboarding
-    const language_to = onboardingState.selectedLanguage || 'en';
+    const language_from = "vi"; // Default or from onboarding
+    const language_to = onboardingState.selectedLanguage || "en";
     const current_level = onboardingState.selectedLevel || 1;
 
     try {
-      await dispatch(setupRegisterUser({
-        email,
-        password,
-        username: username || undefined,
-        language_from,
-        language_to,
-        current_level,
-      })).unwrap();
+      await dispatch(
+        setupRegisterUser({
+          email,
+          password,
+          username: username || undefined,
+          language_from,
+          language_to,
+          current_level,
+        })
+      ).unwrap();
 
       // Navigate to home on success
       router.push("/(tabs)/home" as any);
@@ -86,7 +83,7 @@ export default function OnboardingRegisterScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <BackButton />
-      
+
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Text style={styles.appName}>Create Account</Text>

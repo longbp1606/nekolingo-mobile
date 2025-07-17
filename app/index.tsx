@@ -17,7 +17,9 @@ const clearAsyncStorage = async () => {
 };
 
 export default function Index() {
-  const { user, token, isInitialized } = useSelector((state: RootState) => state.user);
+  const { user, token, isInitialized } = useSelector(
+    (state: RootState) => state.user
+  );
   const { isCompleted: onboardingCompleted, isLoaded: onboardingLoaded } =
     useSelector((state: RootState) => state.onboarding);
   const router = useRouter();

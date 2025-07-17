@@ -1,4 +1,4 @@
-import { API_BASE_URL } from './config';
+import { API_BASE_URL } from "./config";
 
 export interface User {
   id: string;
@@ -55,40 +55,45 @@ export interface TokenResponse {
 }
 
 class AuthService {
-  private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  private async makeRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
     try {
       console.log(`Making request to: ${API_BASE_URL}/api/auth${endpoint}`);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/auth${endpoint}`, {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...options.headers,
         },
         ...options,
       });
 
       const data = await response.json();
-      console.log('API Response:', data);
+      console.log("API Response:", data);
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          data.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error("API request failed:", error);
       throw error;
     }
   }
 
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await this.makeRequest<TokenResponse>('/login', {
-      method: 'POST',
+    const response = await this.makeRequest<TokenResponse>("/login", {
+      method: "POST",
       body: JSON.stringify(data),
     });
 
     const tokenData = response.data;
-    
+
     // Get user profile with the token
     const userProfile = await this.getProfile(tokenData.accessToken);
 
@@ -100,8 +105,8 @@ class AuthService {
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
     // First, create basic account
-    await this.makeRequest('/register', {
-      method: 'POST',
+    await this.makeRequest("/register", {
+      method: "POST",
       body: JSON.stringify({
         email: data.email,
         password: data.password,
@@ -116,28 +121,28 @@ class AuthService {
   }
 
   async setupRegister(data: SetupRegisterRequest): Promise<void> {
-    await this.makeRequest('/setup-register', {
-      method: 'POST',
+    await this.makeRequest("/setup-register", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   async getProfile(token: string): Promise<User> {
-    const response = await this.makeRequest<any>('/profile', {
-      method: 'GET',
+    const response = await this.makeRequest<any>("/profile", {
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     const profile = response.data;
-    
+
     // Map API response to our User interface
     return {
       id: profile._id || profile.id,
-      name: profile.username || profile.name || profile.email.split('@')[0],
+      name: profile.username || profile.name || profile.email.split("@")[0],
       email: profile.email,
-      selectedLanguage: profile.language_to || 'en',
+      selectedLanguage: profile.language_to || "en",
       streak: profile.streakDays || 0,
       xp: profile.xp || 0,
       level: profile.current_level || 1,
@@ -152,7 +157,7 @@ class AuthService {
 
   async forgotPassword(email: string): Promise<{ success: boolean }> {
     // API doesn't have forgot password endpoint yet, so return mock
-    console.log('Forgot password for:', email);
+    console.log("Forgot password for:", email);
     return { success: true };
   }
 
