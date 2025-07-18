@@ -1,7 +1,7 @@
 // API configuration
 
-// In a real app, this would be an environment variable
-export const API_BASE_URL = "https://api.nekolingo.com"; // This is a placeholder
+// For Android emulator, use 10.0.2.2 to access host machine's localhost
+export const API_BASE_URL = "http://10.0.2.2:3000"; // Local API server for development
 
 // Setup axios interceptors and other config here if needed
 export const setupApiInterceptors = (token: string) => {

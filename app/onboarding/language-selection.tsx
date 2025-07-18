@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
 import { AppDispatch } from "../../stores";
+import { setCurrentStep, setLanguage } from "../../stores/onboardingSlice";
 import { updateUserSettings } from "../../stores/userSlice";
 
 interface LanguageOption {
@@ -38,9 +39,11 @@ export default function LanguageSelectionScreen() {
     if (selectedLanguage) {
       // Update user's selected language in Redux
       dispatch(updateUserSettings({ selectedLanguage }));
+      dispatch(setLanguage(selectedLanguage));
+      dispatch(setCurrentStep(4));
 
-      // Navigate to home screen
-      router.push("/(tabs)/home" as any);
+      // Navigate to source selection
+      router.push("/onboarding/source-selection" as any);
     }
   };
 

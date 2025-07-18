@@ -9,7 +9,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
 
   const handleGetStarted = () => {
-    router.push("/onboarding/language-selection");
+    router.push("/onboarding/welcome" as any);
   };
 
   const handleLogin = () => {
