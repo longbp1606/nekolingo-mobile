@@ -64,7 +64,7 @@ const monthsData: MonthData[] = [
 
 interface StatItemData {
     id: string;
-    icon: React.ReactNode;
+    icon: any;
     value: string | number;
     color: string;
     modal: {
@@ -142,7 +142,7 @@ const StatsBar: React.FC = () => {
             id: 'courses',
             icon: (
                 <Image
-                    source={{ uri: `https://flagcdn.com/w40/${selectedCourse.flag}.png` }}
+                    source={require('../assets/images/united-states.png')}
                     style={styles.flagIcon}
                 />
             ),
@@ -156,7 +156,12 @@ const StatsBar: React.FC = () => {
         },
         {
             id: 'streak',
-            icon: <Text style={styles.streakIcon}>🔥</Text>,
+            icon: (
+                <Image
+                    source={require('../assets/images/flame.png')}
+                    style={styles.streakIcon}
+                />
+            ),
             value: 1,
             color: '#FFA500',
             modal: {
@@ -169,7 +174,12 @@ const StatsBar: React.FC = () => {
         },
         {
             id: 'hearts',
-            icon: <Text style={styles.heartIcon}>❤️</Text>,
+            icon: (
+                <Image
+                    source={require('../assets/images/heart.png')}
+                    style={styles.heartIcon}
+                />
+            ),
             value: 25,
             color: '#FF4B4B',
             modal: {
@@ -287,7 +297,7 @@ const StatsBar: React.FC = () => {
 
                 <View style={styles.courseContainer}>
                     <Image
-                        source={{ uri: `https://flagcdn.com/w40/${selectedCourse.flag}.png` }}
+                        source={require(`../assets/images/united-states.png`)}
                         style={styles.courseFlagLarge}
                     />
                     <Text style={styles.courseName}>{selectedCourse.name}</Text>
@@ -396,7 +406,7 @@ const StatsBar: React.FC = () => {
                                     <Text style={styles.streakLabel}>ngày streak!</Text>
                                 </View>
                                 <View style={styles.streakFlame}>
-                                    <Text style={styles.flameIcon}>🔥</Text>
+                                    <Image source={require('../assets/images/flame.png')} style={styles.flameIcon} />
                                 </View>
                             </View>
 
@@ -586,15 +596,19 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     flagIcon: {
-        width: 24,
+        width: 28,
         height: 18,
         borderRadius: 2,
     },
     streakIcon: {
-        fontSize: 20,
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     heartIcon: {
-        fontSize: 20,
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     modalOverlay: {
         flex: 1,
@@ -701,18 +715,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    // progressBar: {
-    //     height: 20,
-    //     backgroundColor: '#e5e5e5',
-    //     borderRadius: 5,
-    //     marginBottom: 10,
-    //     overflow: 'hidden',
-    // },
-    // progressFill: {
-    //     height: '100%',
-    //     backgroundColor: '#ff69b4',
-    //     borderRadius: 5,
-    // },
+
     progressBar: {
         width: '90%',
         height: 20,
@@ -895,7 +898,9 @@ const styles = StyleSheet.create({
         borderColor: 'white',
     },
     flameIcon: {
-        fontSize: 40,
+        width: 40,
+        height: 40,
+        resizeMode: 'contain',
     },
     calendarContainer: {
         backgroundColor: 'white',

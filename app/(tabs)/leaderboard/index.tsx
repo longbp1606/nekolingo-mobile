@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -25,83 +26,83 @@ const LeaderboardScreen = () => {
       green: '#58CC02',
       bgGreen: '#D7FFB8',
       bgBlue: '#CCF2F5',
-      darkGreen: '4DAA02',
-      darkRed: 'E04343',
-      lightOrange: 'FFD700',
-      orange: 'FFA500',
-      lightPurple: 'AB47BC',
-      darkPurple: '9C27B0',
+      darkGreen: '#4DAA02',
+      darkRed: '#E04343',
+      lightOrange: '#FFD700',
+      orange: '#FFA500',
+      lightPurple: '#AB47BC',
+      darkPurple: '#9C27B0',
     },
   };
 
   const tournaments = {
     bronze: {
-      icon: '🥉',
+      icon: require('../../../assets/images/bronze-medal.png'),
       title: 'Giải đấu Đồng',
       subtitle: 'Top 15 sẽ được thăng hạng lên giải đấu cao hơn',
       gradient: 'linear-gradient(135deg, #CD7F32, #F4E4BC)',
-      backgroundColor: '#CD7F32',
+      backgroundColor: '#64380dff',
       data: [
         { rank: 1, name: 'xFaKvB9u', score: '164 KN', avatar: 'X', color: '#ff9500', isOnline: true },
-        { rank: 2, name: 'blevins', score: '117 KN', avatar: '🤓', color: '#ff69b4', isOnline: true },
+        { rank: 2, name: 'blevins', score: '117 KN', avatar: 'B', color: '#ff69b4', isOnline: true },
         { rank: 3, name: 'tu.8zPhLRDVr49BC', score: '30 KN', avatar: 'T', color: '#ff4444', isOnline: true },
         { rank: 4, name: 'kaito', score: '30 KN', avatar: 'K', color: '#ff4444', isOnline: true },
         { rank: 5, name: 'Eduardo Picano', score: '28 KN', avatar: 'E', color: '#9966ff', isOnline: true },
-        { rank: 6, name: 'tu.8zPhLBrEOdxpl', score: '20 KN', avatar: '🦉', color: '#333', isOnline: true },
+        { rank: 6, name: 'tu.8zPhLBrEOdxpl', score: '20 KN', avatar: 'T', color: '#4B4B4B', isOnline: true },
         { rank: 7, name: 'Khanh Tr?n Th?y H?ng', score: '15 KN', avatar: 'K', color: '#ff4444', isOnline: true },
         { rank: 8, name: 'xFaKvB9u', score: '164 KN', avatar: 'X', color: '#ff9500', isOnline: true },
-        { rank: 9, name: 'blevins', score: '117 KN', avatar: '🤓', color: '#ff69b4', isOnline: true },
+        { rank: 9, name: 'blevins', score: '117 KN', avatar: 'B', color: '#ff69b4', isOnline: true },
         { rank: 10, name: 'tu.8zPhLRDVr49BC', score: '30 KN', avatar: 'T', color: '#ff4444', isOnline: true },
         { rank: 11, name: 'kaito', score: '30 KN', avatar: 'K', color: '#ff4444', isOnline: true },
         { rank: 12, name: 'Eduardo Picano', score: '28 KN', avatar: 'E', color: '#9966ff', isOnline: true },
-        { rank: 13, name: 'tu.8zPhLBrEOdxpl', score: '20 KN', avatar: '🦉', color: '#333', isOnline: true },
+        { rank: 13, name: 'tu.8zPhLBrEOdxpl', score: '20 KN', avatar: 'T', color: '#4B4B4B', isOnline: true },
         { rank: 14, name: 'Khanh', score: '15 KN', avatar: 'K', color: '#ff4444', isOnline: true },
         { rank: 15, name: 'Khanh Tr?n Th?y H?ng', score: '15 KN', avatar: 'K', color: '#ff4444', isOnline: true },
       ]
     },
     silver: {
-      icon: '🥈',
+      icon: require('../../../assets/images/silver-medal.png'),
       title: 'Giải đấu Bạc',
       subtitle: 'Top 10 sẽ được thăng hạng lên giải đấu cao hơn',
       gradient: 'linear-gradient(135deg, #C0C0C0, #E8E8E8)',
-      backgroundColor: '#C0C0C0',
+      backgroundColor: '#d4d4d4ff',
       data: [
         { rank: 1, name: 'ProGamer2024', score: '892 KN', avatar: 'P', color: '#ff9500', isOnline: true },
-        { rank: 2, name: 'SilverKnight', score: '756 KN', avatar: '⚔️', color: '#ff69b4', isOnline: true },
-        { rank: 3, name: 'MasterChef', score: '689 KN', avatar: '👨‍🍳', color: '#ff4444', isOnline: false },
+        { rank: 2, name: 'SilverKnight', score: '756 KN', avatar: 'S', color: '#ff69b4', isOnline: true },
+        { rank: 3, name: 'MasterChef', score: '689 KN', avatar: 'M', color: '#ff4444', isOnline: false },
         { rank: 4, name: 'CodeWarrior', score: '634 KN', avatar: 'C', color: '#4CAF50', isOnline: true },
-        { rank: 5, name: 'NightHawk', score: '598 KN', avatar: '🦅', color: '#9966ff', isOnline: true },
+        { rank: 5, name: 'NightHawk', score: '598 KN', avatar: 'N', color: '#9966ff', isOnline: true },
         { rank: 6, name: 'DragonSlayer', score: '567 KN', avatar: 'D', color: '#ff4444', isOnline: false },
-        { rank: 7, name: 'PhoenixRise', score: '523 KN', avatar: '🔥', color: '#ff9500', isOnline: true }
+        { rank: 7, name: 'PhoenixRise', score: '523 KN', avatar: 'P', color: '#ff9500', isOnline: true }
       ]
     },
     gold: {
-      icon: '🥇',
+      icon: require('../../../assets/images/gold-medal.png'),
       title: 'Giải đấu Vàng',
       subtitle: 'Top 5 sẽ được thăng hạng lên giải đấu cao hơn',
       gradient: 'linear-gradient(135deg, #FFD700, #FFF8DC)',
-      backgroundColor: '#FFD700',
+      backgroundColor: '#faea90ff',
       data: [
-        { rank: 1, name: 'GoldLegend', score: '2.1M KN', avatar: '👑', color: '#ff9500', isOnline: true },
+        { rank: 1, name: 'GoldLegend', score: '2.1M KN', avatar: 'G', color: '#ff9500', isOnline: true },
         { rank: 2, name: 'ElitePlayer', score: '1.8M KN', avatar: 'E', color: '#ff69b4', isOnline: true },
-        { rank: 3, name: 'ChampionX', score: '1.6M KN', avatar: '🏆', color: '#ff4444', isOnline: true },
-        { rank: 4, name: 'GoldenEagle', score: '1.4M KN', avatar: '🦅', color: '#4CAF50', isOnline: false },
+        { rank: 3, name: 'ChampionX', score: '1.6M KN', avatar: 'C', color: '#ff4444', isOnline: true },
+        { rank: 4, name: 'GoldenEagle', score: '1.4M KN', avatar: 'G', color: '#4CAF50', isOnline: false },
         { rank: 5, name: 'KingOfGames', score: '1.2M KN', avatar: 'K', color: '#9966ff', isOnline: true },
         { rank: 6, name: 'GoldRush', score: '1.1M KN', avatar: 'G', color: '#ff4444', isOnline: true },
-        { rank: 7, name: 'UltimateWin', score: '980K KN', avatar: 'U', color: '#333', isOnline: true }
+        { rank: 7, name: 'UltimateWin', score: '980K KN', avatar: 'U', color: '#4B4B4B', isOnline: true }
       ]
     },
     diamond: {
-      icon: '💎',
+      icon: require('../../../assets/images/diamond.png'),
       title: 'Giải đấu Kim Cương',
       subtitle: 'Giải đấu cao nhất - Chỉ dành cho những người chơi xuất sắc nhất',
       gradient: 'linear-gradient(135deg, #00BFFF, #E0F6FF)',
-      backgroundColor: '#00BFFF',
+      backgroundColor: '#caeefaff',
       data: [
-        { rank: 1, name: 'DiamondKing', score: '10.5M KN', avatar: '💎', color: '#00BFFF', isOnline: true },
-        { rank: 2, name: 'CrystalMaster', score: '9.8M KN', avatar: '🔮', color: '#9966ff', isOnline: true },
+        { rank: 1, name: 'DiamondKing', score: '10.5M KN', avatar: 'D', color: '#00BFFF', isOnline: true },
+        { rank: 2, name: 'CrystalMaster', score: '9.8M KN', avatar: 'C', color: '#9966ff', isOnline: true },
         { rank: 3, name: 'PlatinumPro', score: '9.2M KN', avatar: 'P', color: '#E5E4E2', isOnline: true },
-        { rank: 4, name: 'DiamondQueen', score: '8.7M KN', avatar: '👸', color: '#ff69b4', isOnline: false },
+        { rank: 4, name: 'DiamondQueen', score: '8.7M KN', avatar: '', color: '#ff69b4', isOnline: false },
         { rank: 5, name: 'GemLord', score: '8.1M KN', avatar: '💍', color: '#FFD700', isOnline: true },
         { rank: 6, name: 'CrystalHeart', score: '7.8M KN', avatar: '💖', color: '#ff4444', isOnline: true },
         { rank: 7, name: 'DiamondStorm', score: '7.3M KN', avatar: '⚡', color: '#ff9500', isOnline: true }
@@ -117,9 +118,9 @@ const LeaderboardScreen = () => {
 
   const getRankColor = (rank: any) => {
     switch (rank) {
-      case 1: return '#FFD700';
+      case 1: return '#ffd900ff';
       case 2: return '#c0c0c0';
-      case 3: return '#cd7f32';
+      case 3: return '#f6a04aff';
       default: return theme.color.green;
     }
   };
@@ -139,12 +140,12 @@ const LeaderboardScreen = () => {
                 ]}
                 onPress={() => handleTournamentChange(key)}
               >
-                <Text style={[
+                <Image style={[
                   styles.tournamentIcon,
                   selectedTournament === key && styles.tournamentIconActive
-                ]}>
-                  {tournament.icon}
-                </Text>
+                ]}
+                  source={tournament.icon}
+                />
               </TouchableOpacity>
             ))}
           </View>
@@ -238,10 +239,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   tournamentIcon: {
-    fontSize: 24,
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
   },
   tournamentIconActive: {
-    fontSize: 32,
+    width: 44,
+    height: 44,
+    resizeMode: 'contain',
   },
   tournamentContent: {
     alignItems: 'center',
@@ -251,7 +256,7 @@ const styles = StyleSheet.create({
   tournamentTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#333333',
+    color: '#4B4B4B333',
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -340,7 +345,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333333',
+    color: '#4B4B4B333',
   },
   userScore: {
     fontSize: 14,

@@ -18,7 +18,7 @@ export const achievements = [
     {
         level: "CẤP 1",
         className: "fire",
-        icon: require('../assets/images/firefire.png'),
+        icon: require('../assets/images/flame.png'),
         name: "Lửa rồng",
         progressText: "2/3",
         percentage: percentage1,
@@ -27,7 +27,7 @@ export const achievements = [
     {
         level: "CẤP 2",
         className: "scholar",
-        icon: require('../assets/images/star.png'),
+        icon: require('../assets/images/star-3d.png'),
         name: "Cao nhân",
         progressText: "237/250",
         percentage: percentage2,
@@ -36,7 +36,7 @@ export const achievements = [
     {
         level: "CẤP 1",
         className: "student",
-        icon: require('../assets/images/scholar.png'),
+        icon: require('../assets/images/master-data.png'),
         name: "Học giả",
         progressText: "0/50",
         percentage: percentage3,
@@ -45,7 +45,7 @@ export const achievements = [
     {
         level: "CẤP 1",
         className: "fire",
-        icon: require('../assets/images/firefire.png'),
+        icon: require('../assets/images/flame.png'),
         name: "Lửa rồng",
         progressText: "2/3",
         percentage: percentage1,
@@ -54,7 +54,7 @@ export const achievements = [
     {
         level: "CẤP 2",
         className: "scholar",
-        icon: require('../assets/images/star.png'),
+        icon: require('../assets/images/star-3d.png'),
         name: "Cao nhân",
         progressText: "237/250",
         percentage: percentage2,
@@ -63,7 +63,7 @@ export const achievements = [
     {
         level: "CẤP 1",
         className: "student",
-        icon: require('../assets/images/scholar.png'),
+        icon: require('../assets/images/master-data.png'),
         name: "Học giả",
         progressText: "0/50",
         percentage: percentage3,
@@ -267,15 +267,14 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     achievementImg: {
-        width: 90,
-        height: 90,
+        width: 50,
+        height: 50,
         resizeMode: 'contain',
-        marginTop: -15,
+        marginBottom: 8,
     },
     achievementText: {
         fontSize: 12,
         fontWeight: '600',
-        marginTop: -15,
     },
     achievementInfo: {
         flex: 1,

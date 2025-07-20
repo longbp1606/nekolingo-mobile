@@ -1,5 +1,7 @@
+import { FontAwesome } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { QuestMission } from "./QuestMission";
 
 interface QuestHeaderProps {
   title: string;
@@ -21,19 +23,35 @@ export function QuestHeader({
           <Text style={styles.monthLabel}>THÁNG BẢY</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
-          <View style={styles.timeContainer}>
-            <Text style={styles.timeIcon}>⏰</Text>
-            <Text style={styles.timeText}>{timeRemaining}</Text>
-          </View>
+
+
         </View>
 
         {characterAvatar && (
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarEmoji}>🤓</Text>
+              <Image
+                source={require(`../../assets/images/summer.gif`)}
+                style={styles.avatarEmoji}
+              />
             </View>
           </View>
         )}
+
+      </View>
+      <QuestMission
+        title="Kiếm 30 Điểm nhiệm vụ"
+        subtitle=""
+        progress={15}
+        total={30}
+        icon="🔒"
+        style={{
+          paddingRight: 20, paddingLeft: 20, marginLeft: 0, marginRight: 0,
+        }}
+      />
+      <View style={styles.timeContainer}>
+        <Text style={styles.timeIcon}><FontAwesome name="clock-o" size={18} color="#FFF" /></Text>
+        <Text style={styles.timeText}>{timeRemaining}</Text>
       </View>
     </View>
   );
@@ -41,7 +59,7 @@ export function QuestHeader({
 
 const styles = StyleSheet.create({
   headerContainer: {
-    backgroundColor: "#1CB0F6",
+    backgroundColor: "#2B70C9",
     paddingVertical: 20,
     paddingHorizontal: 20,
   },
@@ -52,6 +70,10 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+  },
+  avatarEmoji: {
+    width: 100,
+    height: 100,
   },
   monthLabel: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
@@ -78,6 +100,7 @@ const styles = StyleSheet.create({
   timeContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 10,
   },
   timeIcon: {
     fontSize: 16,
@@ -92,16 +115,13 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   avatar: {
-    width: 80,
-    height: 80,
+    width: 110,
+    height: 120,
     borderRadius: 40,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
     borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  avatarEmoji: {
-    fontSize: 40,
   },
 });

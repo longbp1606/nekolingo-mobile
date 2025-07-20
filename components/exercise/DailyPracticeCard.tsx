@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface DailyPracticeCardProps {
   title: string;
@@ -35,7 +35,7 @@ export function DailyPracticeCard({
         {character && (
           <View style={styles.characterContainer}>
             <View style={styles.characterCircle}>
-              <Text style={styles.characterEmoji}>🐦</Text>
+              <Image source={require("./../../assets/images/practice.png")} style={styles.characterEmoji} />
             </View>
           </View>
         )}
@@ -92,11 +92,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 25,
     alignSelf: "flex-start",
   },
   unlockButtonText: {
-    color: "#1976D2",
+    color: "#4CAF50",
     fontSize: 14,
     fontWeight: "bold",
   },
@@ -104,9 +103,9 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   characterCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 130,
+    height: 120,
+    borderRadius: 17.5,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
@@ -114,6 +113,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
   characterEmoji: {
-    fontSize: 40,
+    width: 100,
+    height: 100,
+    resizeMode: "contain",
   },
 });

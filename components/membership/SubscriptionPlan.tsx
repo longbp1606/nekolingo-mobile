@@ -40,7 +40,7 @@ export function SubscriptionPlan({
       )}
 
       <View style={styles.planContent}>
-        <View style={styles.planHeader}>
+        <View style={styles.planHeader} >
           <Text style={styles.planTitle}>{title}</Text>
           {badge && (
             <View style={styles.badge}>
@@ -91,7 +91,6 @@ export function SubscriptionPlan({
 
         <TouchableOpacity style={styles.subscribeButton} onPress={onSubscribe}>
           <Text style={styles.subscribeButtonText}>{buttonText}</Text>
-          <Text style={styles.priceText}>{price}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -103,25 +102,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 15,
     marginHorizontal: 20,
+    borderWidth: 2,
+    borderColor: "#E5E5E5",
     marginBottom: 20,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    overflow: "hidden",
   },
   recommendedPlan: {
     borderWidth: 2,
-    borderColor: "#4CAF50",
+    borderColor: "#9069CD",
   },
   recommendedBadge: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#9069CD",
     paddingVertical: 8,
     alignItems: "center",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   recommendedText: {
     color: "#FFFFFF",
@@ -140,7 +134,7 @@ const styles = StyleSheet.create({
   planTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "#4B4B4B",
     flex: 1,
   },
   badge: {
@@ -175,7 +169,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   memberCount: {
-    backgroundColor: "#2196F3",
+    backgroundColor: "#9069CD",
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -200,14 +194,14 @@ const styles = StyleSheet.create({
     width: 20,
   },
   included: {
-    color: "#4CAF50",
+    color: "#9069CD",
   },
   excluded: {
     color: "#F44336",
   },
   featureText: {
     fontSize: 16,
-    color: "#333",
+    color: "#4B4B4B",
     flex: 1,
   },
   excludedText: {
@@ -221,9 +215,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E0E0E0",
+    borderBottomWidth: 4,
+  borderBottomColor: "#BDBDBD",
   },
   subscribeButtonText: {
-    color: "#2196F3",
+    color: "#9069CD",
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 2,

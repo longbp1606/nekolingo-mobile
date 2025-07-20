@@ -10,12 +10,10 @@ import {
 export default function ExerciseScreen() {
   const handleUnlockPractice = () => {
     console.log("Unlock practice pressed");
-    // Navigate to daily practice
   };
 
   const handlePracticeItemPress = (type: string) => {
     console.log("Practice item pressed:", type);
-    // Navigate to specific practice type
   };
 
   return (
@@ -34,14 +32,12 @@ export default function ExerciseScreen() {
           <PracticeSection title="Luyện giao tiếp" badge="SUPER">
             <PracticeItem
               title="Luyện nói"
-              icon="🎤"
-              iconColor="#4CAF50"
+              iconSource={require("../../../assets/images/talking.png")}
               onPress={() => handlePracticeItemPress("speaking")}
             />
             <PracticeItem
               title="Luyện nghe"
-              icon="🔊"
-              iconColor="#2196F3"
+              iconSource={require("../../../assets/images/woman.png")}
               onPress={() => handlePracticeItemPress("listening")}
             />
           </PracticeSection>
@@ -49,14 +45,12 @@ export default function ExerciseScreen() {
           <PracticeSection title="Góc học tập">
             <PracticeItem
               title="Các lỗi sai cũ"
-              icon="🔄"
-              iconColor="#FF9800"
+              iconSource={require("../../../assets/images/maintenance.png")}
               onPress={() => handlePracticeItemPress("mistakes")}
             />
             <PracticeItem
               title="Ôn luyện"
-              icon="📚"
-              iconColor="#F44336"
+              iconSource={require("../../../assets/images/target.png")}
               onPress={() => handlePracticeItemPress("review")}
             />
           </PracticeSection>

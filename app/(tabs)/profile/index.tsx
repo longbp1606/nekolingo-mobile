@@ -23,25 +23,25 @@ const profile = {
 
 const stats = [
   {
-    icon: require("../../../assets/images/firefire.png"),
+    icon: require("../../../assets/images/flame.png"),
     label: "Ngày streak",
     value: "0",
     className: "streak",
   },
   {
-    icon: require("../../../assets/images/thunder.png"),
+    icon: require("../../../assets/images/lightning.png"),
     label: "Tổng điểm XP",
     value: "237",
     className: "lightning",
   },
   {
-    icon: require("../../../assets/images/prize.png"),
+    icon: require("../../../assets/images/winner.png"),
     label: "Giải đấu hiện tại",
     value: "Đồng",
     className: "bronze",
   },
   {
-    icon: require("../../../assets/images/cup.png"),
+    icon: require("../../../assets/images/trophy.png"),
     label: "Số dấu đạt top 3",
     value: "0",
     className: "trophy",
@@ -288,9 +288,11 @@ const styles = StyleSheet.create({
   },
 
   statImg: {
-    width: 60,
-    height: 60,
-    marginTop: -10,
+    width: 38,
+    height: 38,
+    marginTop: 5,
+    marginBottom: 5,
+    resizeMode: 'contain',
   },
 
   statInfo: {

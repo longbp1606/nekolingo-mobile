@@ -18,12 +18,12 @@ export function MembershipHeader({ title, subtitle }: MembershipHeaderProps) {
 const styles = StyleSheet.create({
   headerContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 30,
+    paddingVertical: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#333",
+    color: "#4B4B4B",
     marginBottom: 10,
   },
   subtitle: {
