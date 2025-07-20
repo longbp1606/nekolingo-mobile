@@ -47,8 +47,17 @@ export default function RegisterScreen() {
       return false;
     }
 
-    if (password.length < 6) {
-      setValidationError("Password must be at least 6 characters");
+    // Match API password requirements: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 symbol
+    if (password.length < 8) {
+      setValidationError("Password must be at least 8 characters");
+      return false;
+    }
+
+    const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])/;
+    if (!passwordRegex.test(password)) {
+      setValidationError(
+        "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 symbol"
+      );
       return false;
     }
 

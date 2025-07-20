@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import languageReducer from "./languageSlice";
 import lessonsReducer from "./lessonsSlice";
 import onboardingReducer from "./onboardingSlice";
 import userReducer from "./userSlice";
@@ -8,6 +9,7 @@ export const store = configureStore({
     user: userReducer,
     lessons: lessonsReducer,
     onboarding: onboardingReducer,
+    language: languageReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

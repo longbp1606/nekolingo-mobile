@@ -164,20 +164,14 @@ export const setupRegisterUser = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      // First setup the user with onboarding data
-      await authService.setupRegister({
+      // Setup the user with onboarding data - this now returns tokens directly
+      const response = await authService.setupRegister({
         email: userData.email,
         password: userData.password,
         username: userData.username,
         language_from: userData.language_from,
         language_to: userData.language_to,
         current_level: userData.current_level,
-      });
-
-      // Then login to get the tokens
-      const response = await authService.login({
-        email: userData.email,
-        password: userData.password,
       });
 
       // Store authentication data

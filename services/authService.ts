@@ -104,7 +104,7 @@ class AuthService {
   }
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    // First, create basic account
+    // First, create basic account using auth/register endpoint (only email and password)
     await this.makeRequest("/register", {
       method: "POST",
       body: JSON.stringify({
@@ -120,11 +120,21 @@ class AuthService {
     });
   }
 
-  async setupRegister(data: SetupRegisterRequest): Promise<void> {
-    await this.makeRequest("/setup-register", {
+  async setupRegister(data: SetupRegisterRequest): Promise<AuthResponse> {
+    const response = await this.makeRequest<TokenResponse>("/setup-register", {
       method: "POST",
       body: JSON.stringify(data),
     });
+
+    const tokenData = response.data;
+
+    // Get user profile with the token
+    const userProfile = await this.getProfile(tokenData.accessToken);
+
+    return {
+      user: userProfile,
+      token: tokenData.accessToken,
+    };
   }
 
   async getProfile(token: string): Promise<User> {

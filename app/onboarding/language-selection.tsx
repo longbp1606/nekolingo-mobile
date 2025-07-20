@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -8,31 +9,34 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch } from "../../stores";
+import { Language } from "../../services/languageService";
+import { AppDispatch, RootState } from "../../stores";
+import {
+  fetchLanguages,
+  setSelectedLanguageTo,
+} from "../../stores/languageSlice";
 import { setCurrentStep, setLanguage } from "../../stores/onboardingSlice";
 import { updateUserSettings } from "../../stores/userSlice";
-
-interface LanguageOption {
-  code: string;
-  name: string;
-  flag: string;
-}
-
-const languages: LanguageOption[] = [
-  { code: "ja", name: "Japanese", flag: "🇯🇵" },
-  { code: "en", name: "English", flag: "🇺🇸" },
-];
 
 export default function LanguageSelectionScreen() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  const handleLanguageSelect = (languageCode: string) => {
-    setSelectedLanguage(languageCode);
+  const { languages, loading, error } = useSelector(
+    (state: RootState) => state.language
+  );
+
+  useEffect(() => {
+    dispatch(fetchLanguages());
+  }, [dispatch]);
+
+  const handleLanguageSelect = (language: Language) => {
+    setSelectedLanguage(language.code);
+    dispatch(setSelectedLanguageTo(language));
   };
 
   const handleContinue = () => {
@@ -47,15 +51,15 @@ export default function LanguageSelectionScreen() {
     }
   };
 
-  const renderLanguageItem = ({ item }: { item: LanguageOption }) => (
+  const renderLanguageItem = ({ item }: { item: Language }) => (
     <TouchableOpacity
       style={[
         styles.languageItem,
         selectedLanguage === item.code && styles.selectedLanguageItem,
       ]}
-      onPress={() => handleLanguageSelect(item.code)}
+      onPress={() => handleLanguageSelect(item)}
     >
-      <Text style={styles.languageFlag}>{item.flag}</Text>
+      <Text style={styles.languageFlag}>{item.flag || "🌐"}</Text>
       <Text
         style={[
           styles.languageName,
@@ -64,8 +68,37 @@ export default function LanguageSelectionScreen() {
       >
         {item.name}
       </Text>
+      {item.native_name && item.native_name !== item.name && (
+        <Text style={styles.nativeName}>({item.native_name})</Text>
+      )}
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading languages...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && languages.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Failed to load languages</Text>
+          <Button
+            title="Retry"
+            onPress={() => dispatch(fetchLanguages())}
+            style={styles.retryButton}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,7 +109,7 @@ export default function LanguageSelectionScreen() {
 
       <FlatList
         data={languages}
-        keyExtractor={(item) => item.code}
+        keyExtractor={(item) => item._id}
         renderItem={renderLanguageItem}
         style={styles.languageList}
         contentContainerStyle={styles.languageListContent}
@@ -144,10 +177,42 @@ const styles = StyleSheet.create({
     fontSize: Sizes.h4,
     fontWeight: "600",
     color: Colors.textDark,
+    flex: 1,
   },
   selectedLanguageName: {
     color: Colors.primary,
     fontWeight: "bold",
+  },
+  nativeName: {
+    fontSize: Sizes.caption,
+    color: Colors.textLight,
+    fontStyle: "italic",
+    marginLeft: Sizes.xs,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: Sizes.md,
+    fontSize: Sizes.body,
+    color: Colors.textLight,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: Sizes.md,
+  },
+  errorText: {
+    fontSize: Sizes.body,
+    color: Colors.error,
+    textAlign: "center",
+    marginBottom: Sizes.lg,
+  },
+  retryButton: {
+    minWidth: 120,
   },
   footer: {
     paddingHorizontal: Sizes.md,

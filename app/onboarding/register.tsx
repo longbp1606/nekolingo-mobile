@@ -37,8 +37,17 @@ export default function OnboardingRegisterScreen() {
       return false;
     }
 
+    // Match API password requirements: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 symbol
     if (password.length < 8) {
       setValidationError("Password must be at least 8 characters");
+      return false;
+    }
+
+    const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])/;
+    if (!passwordRegex.test(password)) {
+      setValidationError(
+        "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 symbol"
+      );
       return false;
     }
 
@@ -56,10 +65,22 @@ export default function OnboardingRegisterScreen() {
       return;
     }
 
-    // Map onboarding data to API format
-    const language_from = "vi"; // Default or from onboarding
-    const language_to = onboardingState.selectedLanguage || "en";
+    // Get language selections from language slice
+    const languageState = useSelector((state: RootState) => state.language);
+    const language_from = languageState.selectedLanguageFrom?.code || "vi"; // Default to Vietnamese
+    const language_to =
+      languageState.selectedLanguageTo?.code ||
+      onboardingState.selectedLanguage ||
+      "en";
     const current_level = onboardingState.selectedLevel || 1;
+
+    // Validate that a target language is selected
+    if (!language_to || language_to === language_from) {
+      setValidationError(
+        "Please select a language to learn that is different from your native language"
+      );
+      return;
+    }
 
     try {
       await dispatch(
