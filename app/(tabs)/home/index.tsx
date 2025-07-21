@@ -52,13 +52,13 @@ interface LessonCircleProps {
 const getUnitColor = (unitId: number) => {
   const colors: { [key: number]: string } = {
     1: '#00C2D1',
-    2: '#9C27B0',
-    3: '#4DAA02',
-    4: '#FF5722',
-    5: '#009EB2',
-    6: '#e100ffff',
-    7: '#FF4B4B',
-    8: '#4B4B4B',
+    2: '#4CAF50',
+    3: '#9069CD',
+    4: '#A5ED6E',
+    5: '#2B70C9',
+    6: '#6F4EA1',
+    7: '#1453A3',
+    8: '#A56644',
   };
   return colors[unitId] || '#00C2D1';
 };

@@ -1,27 +1,22 @@
 import { usePathname, useRouter } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors, Sizes } from "../constants";
 
 interface BottomNavItem {
   id: string;
-  icon: string;
+  icon: any; 
   label: string;
   route: string;
 }
 
 const navItems: BottomNavItem[] = [
-  { id: "home", icon: "🏠", label: "Home", route: "/(tabs)/home" },
-  { id: "streak", icon: "�", label: "Streak", route: "/(tabs)/streak" },
-  { id: "exercise", icon: "🏋️", label: "Exercise", route: "/(tabs)/exercise" },
-  {
-    id: "leaderboard",
-    icon: "🏆",
-    label: "Leaderboard",
-    route: "/(tabs)/leaderboard",
-  },
-  { id: "membership", icon: "🦅", label: "Plus", route: "/(tabs)/membership" },
-  { id: "profile", icon: "👤", label: "Profile", route: "/(tabs)/profile" },
+  { id: "home", icon: require("../assets/images/house-cleaning.png"), label: "Home", route: "/(tabs)/home" },
+  { id: "streak", icon: require("../assets/images/reward.png"), label: "Streak", route: "/(tabs)/streak" },
+  { id: "exercise", icon: require("../assets/images/homework.png"), label: "Exercise", route: "/(tabs)/exercise" },
+  { id: "leaderboard", icon: require("../assets/images/trophy.png"), label: "Leaderboard", route: "/(tabs)/leaderboard" },
+  { id: "membership", icon: require("../assets/images/subscription.png"), label: "Plus", route: "/(tabs)/membership" },
+  { id: "profile", icon: require("../assets/images/user.png"), label: "Profile", route: "/(tabs)/profile" },
 ];
 
 export default function BottomNavigation() {
@@ -29,8 +24,6 @@ export default function BottomNavigation() {
   const pathname = usePathname();
 
   const handleNavigation = (route: string) => {
-    // Use router.push with the route as a string - the type error can be ignored for now
-    // since we're creating these routes dynamically
     router.push(route as any);
   };
 
@@ -49,14 +42,13 @@ export default function BottomNavigation() {
           ]}
           onPress={() => handleNavigation(item.route)}
         >
-          <Text
+          <Image
+            source={item.icon}
             style={[
-              styles.navIcon,
-              isActiveRoute(item.route) && styles.activeNavIcon,
+              styles.navIconImage,
+              isActiveRoute(item.route) && styles.activeNavIconImage,
             ]}
-          >
-            {item.icon}
-          </Text>
+          />
           <Text
             style={[
               styles.navLabel,
@@ -98,12 +90,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary + "10",
     borderRadius: 12,
   },
-  navIcon: {
-    fontSize: 24,
+  navIconImage: {
+    width: 24,
+    height: 24,
     marginBottom: 2,
+    resizeMode: "contain",
   },
-  activeNavIcon: {
-    fontSize: 26,
+  activeNavIconImage: {
+    width: 26,
+    height: 26,
   },
   navLabel: {
     fontSize: 10,

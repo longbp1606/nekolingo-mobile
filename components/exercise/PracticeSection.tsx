@@ -1,16 +1,16 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface PracticeItemProps {
   title: string;
-  icon: string;
-  iconColor: string;
+  iconSource: any;
+  iconColor?: any;
   onPress?: () => void;
 }
 
 export function PracticeItem({
   title,
-  icon,
+  iconSource,
   iconColor,
   onPress,
 }: PracticeItemProps) {
@@ -18,7 +18,7 @@ export function PracticeItem({
     <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
       <Text style={styles.title}>{title}</Text>
       <View style={[styles.iconContainer, { backgroundColor: iconColor }]}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Image source={iconSource} style={styles.icon} />
       </View>
     </TouchableOpacity>
   );
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "#4B4B4B",
   },
   badgeContainer: {
     backgroundColor: "#4CAF50",
@@ -81,23 +81,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 15,
     padding: 20,
-    marginBottom: 12,
+    marginBottom: 5,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    borderWidth: 2,
+    borderColor: '#e5e5e5',
   },
   title: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#4B4B4B",
     flex: 1,
   },
   iconContainer: {
@@ -108,6 +102,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   icon: {
-    fontSize: 24,
+    width: 60,
+    height: 60,
+    resizeMode: "contain",
   },
 });

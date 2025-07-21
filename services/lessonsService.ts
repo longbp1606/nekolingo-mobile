@@ -136,7 +136,7 @@ const lessonsService = {
   },
 };
 
-// Helper function to generate mock exercises
+// Helper function to generate mock exercises - FIXED VERSION
 function generateMockExercises(count: number, language: string): Exercise[] {
   const exercises: Exercise[] = [];
 
@@ -147,53 +147,58 @@ function generateMockExercises(count: number, language: string): Exercise[] {
     "Complete this sentence",
   ];
 
-  const japaneseWords = [
-    "こんにちは",
-    "ありがとう",
-    "水",
-    "猫",
-    "犬",
-    "本",
-    "車",
-    "家",
-    "食べる",
-    "飲む",
-  ];
-  const spanishWords = [
-    "hola",
-    "gracias",
-    "agua",
-    "gato",
-    "perro",
-    "libro",
-    "coche",
-    "casa",
-    "comer",
-    "beber",
-  ];
+  // Enhanced vocabulary with English translations
+  const vocabularyData = {
+    ja: [
+      { word: "こんにちは", english: "Hello", wrong: ["Goodbye", "Thank you", "Please"] },
+      { word: "ありがとう", english: "Thank you", wrong: ["Hello", "Goodbye", "Please"] },
+      { word: "水", english: "Water", wrong: ["Fire", "Earth", "Air"] },
+      { word: "猫", english: "Cat", wrong: ["Dog", "Bird", "Fish"] },
+      { word: "犬", english: "Dog", wrong: ["Cat", "Horse", "Pig"] },
+      { word: "本", english: "Book", wrong: ["Pen", "Paper", "Desk"] },
+      { word: "車", english: "Car", wrong: ["Train", "Bus", "Bike"] },
+      { word: "家", english: "House", wrong: ["School", "Store", "Park"] },
+      { word: "食べる", english: "To eat", wrong: ["To drink", "To sleep", "To walk"] },
+      { word: "飲む", english: "To drink", wrong: ["To eat", "To run", "To read"] },
+    ],
+    es: [
+      { word: "hola", english: "Hello", wrong: ["Goodbye", "Thank you", "Please"] },
+      { word: "gracias", english: "Thank you", wrong: ["Hello", "Goodbye", "Please"] },
+      { word: "agua", english: "Water", wrong: ["Fire", "Earth", "Air"] },
+      { word: "gato", english: "Cat", wrong: ["Dog", "Bird", "Fish"] },
+      { word: "perro", english: "Dog", wrong: ["Cat", "Horse", "Pig"] },
+      { word: "libro", english: "Book", wrong: ["Pen", "Paper", "Desk"] },
+      { word: "coche", english: "Car", wrong: ["Train", "Bus", "Bike"] },
+      { word: "casa", english: "House", wrong: ["School", "Store", "Park"] },
+      { word: "comer", english: "To eat", wrong: ["To drink", "To sleep", "To walk"] },
+      { word: "beber", english: "To drink", wrong: ["To eat", "To run", "To read"] },
+    ]
+  };
 
-  const words = language === "ja" ? japaneseWords : spanishWords;
+  const vocabulary = vocabularyData[language as keyof typeof vocabularyData] || vocabularyData.ja;
 
   for (let i = 0; i < count; i++) {
-    const exerciseType =
-      Object.values(ExerciseTypes)[i % Object.values(ExerciseTypes).length];
+    const exerciseType = ExerciseTypes.MULTIPLE_CHOICE; // Force all to be multiple choice for consistency
     const questionTemplate = questionTemplates[i % questionTemplates.length];
-    const word = words[i % words.length];
+    const vocabItem = vocabulary[i % vocabulary.length];
 
     const exercise: Exercise = {
       id: `exercise-${i + 1}`,
       type: exerciseType,
-      question: `${questionTemplate}: "${word}"`,
-      correctAnswer: word,
+      question: `${questionTemplate}: "${vocabItem.word}"`,
+      correctAnswer: vocabItem.english,
     };
 
+    // Always create options for multiple choice questions
     if (exerciseType === ExerciseTypes.MULTIPLE_CHOICE) {
-      exercise.options = [
-        word,
-        words[(i + 1) % words.length],
-        words[(i + 2) % words.length],
-        words[(i + 3) % words.length],
-      ];
+      // Shuffle the options to make it more realistic
+      const allOptions = [vocabItem.english, ...vocabItem.wrong];
+      exercise.options = shuffleArray(allOptions);
+    }
+
+    // Add some hints
+    if (i % 3 === 0) {
+      exercise.hints = [`This is a common ${language === 'ja' ? 'Japanese' : 'Spanish'} word you might use daily.`];
     }
 
     exercises.push(exercise);
@@ -202,4 +207,16 @@ function generateMockExercises(count: number, language: string): Exercise[] {
   return exercises;
 }
 
+// Helper function to shuffle array
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export default lessonsService;
+
+

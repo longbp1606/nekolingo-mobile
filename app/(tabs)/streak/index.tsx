@@ -19,6 +19,26 @@ export default function StreakScreen() {
     // Navigate to friends screen
   };
 
+  const missions = [
+    {
+      id: 'daily-streak',
+      title: 'Streak mở màn',
+      subtitle: '',
+      progress: 1,
+      total: 1,
+      icon: '🏆',
+    },
+    {
+      id: 'login-bonus',
+      title: 'Điểm danh ngày mới',
+      subtitle: '',
+      progress: 1,
+      total: 2,
+      icon: '🎁',
+    },
+  ];
+
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -30,19 +50,12 @@ export default function StreakScreen() {
         />
 
         <View style={styles.content}>
-          <QuestMission
-            title="Kiếm 30 Điểm nhiệm vụ"
-            subtitle=""
-            progress={0}
-            total={30}
-            icon="🔒"
-          />
 
-          <MissionSection title="Nhiệm vụ bạn bè" timeRemaining="4 NGÀY">
+          <MissionSection title="Nhiệm vụ bạn bè" timeRemaining="4 NGÀY" >
             <FriendQuestCard
               title="Theo dõi người bạn đầu tiên"
               subtitle=""
-              progress={0}
+              progress={1}
               total={1}
               onFindFriends={handleFindFriends}
             />
@@ -52,15 +65,25 @@ export default function StreakScreen() {
             title="Nhiệm vụ hằng ngày"
             timeRemaining="CÒN 7 TIẾNG"
           >
-            <QuestMission
-              title="Streak mở màn"
-              subtitle=""
-              progress={0}
-              total={1}
-              icon="🏆"
-              onPress={() => handleMissionPress("daily-streak")}
-            />
+            <View style={styles.missionListWrapper}>
+              {missions.map((mission, index) => (
+                <View key={index} style={styles.missionItem} >
+                  {index > 0 && <View style={styles.separator} />}
+                  <QuestMission
+                    title={mission.title}
+                    subtitle={mission.subtitle}
+                    progress={mission.progress}
+                    total={mission.total}
+                    icon={mission.icon}
+                    onPress={() => handleMissionPress(mission.id)}
+                    style={{ padding: 0 }}
+                    isCompleted={mission.progress >= mission.total}
+                  />
+                </View>
+              ))}
+            </View>
           </MissionSection>
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -74,5 +97,27 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingVertical: 20,
+
   },
+  missionListWrapper: {
+    borderWidth: 2,
+    borderColor: '#e5e5e5',
+    borderRadius: 12,
+    marginHorizontal: 20,
+    alignItems: 'stretch',
+  },
+  missionItem: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: '100%',
+  },
+  separator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: '#e5e5e5',
+  },
+
 });

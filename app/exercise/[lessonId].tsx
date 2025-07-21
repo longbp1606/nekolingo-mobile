@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -26,7 +26,10 @@ export default function ExerciseScreen() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
-  const [showResult, setShowResult] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [lives, setLives] = useState(5); // Thêm số mạng
+
+  const correctAnswersRef = useRef(0);
 
   useEffect(() => {
     if (lessonId) {
@@ -34,20 +37,25 @@ export default function ExerciseScreen() {
     }
   }, [dispatch, lessonId]);
 
+  useEffect(() => {
+    correctAnswersRef.current = correctAnswers;
+  }, [correctAnswers]);
+
   const currentExercise = currentLesson?.exercises[currentExerciseIndex];
   const totalExercises = currentLesson?.exercises.length || 0;
   const progress =
     totalExercises > 0 ? (currentExerciseIndex + 1) / totalExercises : 0;
 
   const handleAnswerSelect = (answer: string) => {
-    if (!isAnswerSubmitted) {
+    if (!isAnswerSubmitted && !isProcessing) {
       setSelectedAnswer(answer);
     }
   };
 
   const handleSubmitAnswer = () => {
-    if (!selectedAnswer || !currentExercise) return;
+    if (!selectedAnswer || !currentExercise || isProcessing) return;
 
+    setIsProcessing(true);
     setIsAnswerSubmitted(true);
 
     const isCorrect = Array.isArray(currentExercise.correctAnswer)
@@ -55,42 +63,64 @@ export default function ExerciseScreen() {
       : currentExercise.correctAnswer === selectedAnswer;
 
     if (isCorrect) {
-      setCorrectAnswers((prev) => prev + 1);
+      setCorrectAnswers((prev) => {
+        const newCount = prev + 1;
+        correctAnswersRef.current = newCount;
+        return newCount;
+      });
+    } else {
+      setLives((prev) => Math.max(0, prev - 1)); // Trừ mạng khi sai
     }
 
-    // Show result for 1.5 seconds before moving to next
     setTimeout(() => {
-      if (currentExerciseIndex < totalExercises - 1) {
+      setIsProcessing(false);
+    }, 100);
+  };
+
+  const handleNext = () => {
+    if (isProcessing) return;
+
+    if (currentExerciseIndex < totalExercises - 1) {
+      setIsProcessing(true);
+      setTimeout(() => {
         setCurrentExerciseIndex((prev) => prev + 1);
         setSelectedAnswer(null);
         setIsAnswerSubmitted(false);
-      } else {
-        // Exercise completed, show results
-        handleExerciseComplete();
-      }
-    }, 1500);
+        setIsProcessing(false);
+      }, 100);
+    } else {
+      handleExerciseComplete();
+    }
   };
 
   const handleExerciseComplete = () => {
-    const score = Math.round((correctAnswers / totalExercises) * 100);
+    const finalCorrectAnswers = correctAnswersRef.current;
+    const score = Math.round((finalCorrectAnswers / totalExercises) * 100);
     const xpEarned = Math.round(
-      (correctAnswers / totalExercises) * (currentLesson?.xpReward || 10)
+      (finalCorrectAnswers / totalExercises) * (currentLesson?.xpReward || 10)
     );
-    const perfectLesson = correctAnswers === totalExercises;
-    const streakIncreased = correctAnswers / totalExercises >= 0.7; // 70% accuracy needed for streak
+    const perfectLesson = finalCorrectAnswers === totalExercises;
+    const streakIncreased = finalCorrectAnswers / totalExercises >= 0.7;
 
-    router.push({
-      pathname: "/exercise/result" as any,
-      params: {
-        lessonId: lessonId || "1",
-        score: score.toString(),
-        totalQuestions: totalExercises.toString(),
-        correctAnswers: correctAnswers.toString(),
-        xpEarned: xpEarned.toString(),
-        perfectLesson: perfectLesson.toString(),
-        streakIncreased: streakIncreased.toString(),
-      },
-    });
+    const navigationParams = {
+      lessonId: lessonId || "1",
+      score: score.toString(),
+      totalQuestions: totalExercises.toString(),
+      correctAnswers: finalCorrectAnswers.toString(),
+      xpEarned: xpEarned.toString(),
+      perfectLesson: perfectLesson.toString(),
+      streakIncreased: streakIncreased.toString(),
+    };
+
+    try {
+      router.push({
+        pathname: "/exercise/result",
+        params: navigationParams,
+      });
+    } catch (error) {
+      console.error("Navigation error:", error);
+      router.push("/(tabs)/home");
+    }
   };
 
   const getAnswerStyle = (answer: string) => {
@@ -191,11 +221,21 @@ export default function ExerciseScreen() {
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
+
         <View style={styles.progressContainer}>
           <ProgressBar progress={progress} style={styles.progressBar} />
-          <Text style={styles.progressText}>
-            {currentExerciseIndex + 1} / {totalExercises}
-          </Text>
+          <View style={styles.progressFooter}>
+            <Text style={styles.progressText}>
+              {currentExerciseIndex + 1} / {totalExercises}
+            </Text>
+            <View style={styles.livesContainer}>
+              {[...Array(5)].map((_, i) => (
+                <Text key={i} style={styles.heart}>
+                  {i < lives ? "❤️" : "🤍"}
+                </Text>
+              ))}
+            </View>
+          </View>
         </View>
       </View>
 
@@ -210,7 +250,7 @@ export default function ExerciseScreen() {
                   key={index}
                   style={getAnswerStyle(option)}
                   onPress={() => handleAnswerSelect(option)}
-                  disabled={isAnswerSubmitted}
+                  disabled={isAnswerSubmitted || isProcessing}
                 >
                   <Text style={getAnswerTextStyle(option)}>{option}</Text>
                 </TouchableOpacity>
@@ -227,15 +267,27 @@ export default function ExerciseScreen() {
         </Card>
 
         <View style={styles.actionContainer}>
-          <Button
-            title={isAnswerSubmitted ? "Next" : "Submit"}
-            onPress={handleSubmitAnswer}
-            disabled={!selectedAnswer}
-            style={[
-              styles.submitButton,
-              !selectedAnswer && styles.disabledButton,
-            ]}
-          />
+          {!isAnswerSubmitted ? (
+            <Button
+              title="Submit"
+              onPress={handleSubmitAnswer}
+              disabled={!selectedAnswer || isProcessing}
+              style={[
+                styles.submitButton,
+                (!selectedAnswer || isProcessing) && styles.disabledButton,
+              ]}
+            />
+          ) : (
+            <Button
+              title={currentExerciseIndex < totalExercises - 1 ? "Next" : "View Results"}
+              onPress={handleNext}
+              disabled={isProcessing}
+              style={[
+                styles.submitButton,
+                isProcessing && styles.disabledButton,
+              ]}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -392,5 +444,18 @@ const styles = StyleSheet.create({
   },
   goBackButton: {
     marginTop: Sizes.md,
+  },
+  progressFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  livesContainer: {
+    flexDirection: "row",
+  },
+  heart: {
+    fontSize: 16,
+    marginHorizontal: 1,
   },
 });

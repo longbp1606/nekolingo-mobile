@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,6 +26,7 @@ interface ExerciseResult {
 }
 
 export default function ExerciseResultScreen() {
+
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const params = useLocalSearchParams<{
@@ -37,50 +39,79 @@ export default function ExerciseResultScreen() {
     streakIncreased?: string;
   }>();
 
+
   const { user } = useSelector((state: RootState) => state.user);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
 
+  const getResultImage = () => {
+    if (result.perfectLesson) return require("../../assets/images/grade.png");
+    if (accuracyPercentage >= 70) return require("../../assets/images/flower.png");
+    return require("../../assets/images/love.png");
+  };
+
+  // Use ref to prevent multiple updates
+  const hasUpdatedProgress = useRef(false);
+
+  // Parse parameters with better error handling
   const result: ExerciseResult = {
     lessonId: params.lessonId || "1",
-    score: parseInt(params.score || "0"),
-    totalQuestions: parseInt(params.totalQuestions || "10"),
-    correctAnswers: parseInt(params.correctAnswers || "0"),
-    xpEarned: parseInt(params.xpEarned || "0"),
+    score: parseInt(params.score || "0") || 0,
+    totalQuestions: parseInt(params.totalQuestions || "10") || 10,
+    correctAnswers: parseInt(params.correctAnswers || "0") || 0,
+    xpEarned: parseInt(params.xpEarned || "0") || 0,
     perfectLesson: params.perfectLesson === "true",
     streakIncreased: params.streakIncreased === "true",
   };
 
+
+  const accuracyPercentage = result.totalQuestions > 0
+    ? (result.correctAnswers / result.totalQuestions) * 100
+    : 0;
+
+
   useEffect(() => {
-    // Update user progress
-    if (result.xpEarned > 0 && user) {
+
+    // Prevent multiple updates
+    if (hasUpdatedProgress.current) {
+      return;
+    }
+
+    // Update user progress only once
+    if (result.xpEarned > 0 && user && user.id) {
+
       dispatch(
         updateUserSettings({
           xp: (user.xp || 0) + result.xpEarned,
           streak: result.streakIncreased ? (user.streak || 0) + 1 : user.streak,
         })
       );
+
+      // Mark as updated
+      hasUpdatedProgress.current = true;
     }
 
     // Show streak celebration if streak increased
-    if (result.streakIncreased) {
-      setTimeout(() => setShowStreakCelebration(true), 2000);
+    if (result.streakIncreased && !hasUpdatedProgress.current) {
+      const timer = setTimeout(() => {
+        setShowStreakCelebration(true);
+      }, 2000);
+
+      return () => clearTimeout(timer);
     }
-  }, [dispatch, result, user]);
+  }, [params.lessonId]); // Only depend on lessonId to prevent re-runs for same lesson
 
   const handleContinue = () => {
+
     if (showStreakCelebration) {
-      router.push("/streak/celebration" as any);
+      router.push("/streak/celebration");
     } else {
       router.push("/(tabs)/home");
     }
   };
 
   const handleTryAgain = () => {
-    router.push(`/lessons/${result.lessonId}`);
+    router.push(`/exercise/${result.lessonId}`);
   };
-
-  const accuracyPercentage =
-    (result.correctAnswers / result.totalQuestions) * 100;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -89,7 +120,9 @@ export default function ExerciseResultScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.closeButton}
-            onPress={() => router.push("/(tabs)/home")}
+            onPress={() => {
+              router.push("/(tabs)/home");
+            }}
           >
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
@@ -102,16 +135,10 @@ export default function ExerciseResultScreen() {
               {result.perfectLesson
                 ? "Perfect!"
                 : accuracyPercentage >= 70
-                ? "Great Job!"
-                : "Keep Trying!"}
+                  ? "Great Job!"
+                  : "Keep Trying!"}
             </Text>
-            <Text style={styles.resultEmoji}>
-              {result.perfectLesson
-                ? "🎉"
-                : accuracyPercentage >= 70
-                ? "😊"
-                : "💪"}
-            </Text>
+            <Image source={getResultImage()} style={styles.resultEmoji} />
           </View>
 
           <View style={styles.statsContainer}>
@@ -136,7 +163,7 @@ export default function ExerciseResultScreen() {
               {result.correctAnswers} of {result.totalQuestions} correct
             </Text>
             <ProgressBar
-              progress={result.correctAnswers / result.totalQuestions}
+              progress={result.totalQuestions > 0 ? result.correctAnswers / result.totalQuestions : 0}
               style={styles.progressBar}
             />
           </View>
@@ -220,7 +247,9 @@ const styles = StyleSheet.create({
     marginBottom: Sizes.sm,
   },
   resultEmoji: {
-    fontSize: 48,
+    width: 100,
+    height: 120,
+    resizeMode: 'contain',
   },
   statsContainer: {
     flexDirection: "row",

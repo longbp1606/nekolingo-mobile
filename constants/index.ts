@@ -16,7 +16,7 @@ export const Colors = {
   success: "#58CC02",
   error: "#FF4B4B",
   warning: "#FFC800",
-  info: "#1CB0F6",
+  info: "#2B70C9",
 
   // Additional colors
   purple: "#CE82FF",
@@ -65,7 +65,7 @@ export const ExerciseTypes = {
   MULTIPLE_CHOICE: "multipleChoice",
   TYPE_ANSWER: "typeAnswer",
   MATCH_PAIRS: "matchPairs",
-  SPEAKING: "speaking",
+  // SPEAKING: "speaking",
   LISTENING: "listening",
   ARRANGE_SENTENCE: "arrangeSentence",
 };

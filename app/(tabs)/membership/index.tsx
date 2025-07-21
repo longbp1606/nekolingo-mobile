@@ -37,7 +37,7 @@ export default function MembershipScreen() {
           isRecommended={true}
           features={superFeatures}
           price="0 đ"
-          buttonText="THỬ VỚI GIÁ"
+          buttonText="THỬ VỚI GIÁ 0đ"
           onSubscribe={() => handleSubscribe("super")}
         />
 
@@ -45,7 +45,7 @@ export default function MembershipScreen() {
           title="Gói Super Gia Đình"
           features={familyFeatures}
           price="0 đ"
-          buttonText="THỬ VỚI GIÁ"
+          buttonText="THỬ VỚI GIÁ 0đ"
           avatars={["👨", "👩"]}
           memberCount="+4"
           onSubscribe={() => handleSubscribe("family")}
