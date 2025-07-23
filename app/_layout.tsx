@@ -4,9 +4,9 @@ import React, { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider, useDispatch } from "react-redux";
+import { AppDispatch, store } from "../config/store";
 import { Colors } from "../constants";
-import { AppDispatch, store } from "../stores";
-import { loadStoredAuth } from "../stores/userSlice";
+import { loadStoredAuth } from "../services/auth/authSlice";
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();

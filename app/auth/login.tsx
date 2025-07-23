@@ -8,19 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { loginUser } from "../../stores/userSlice";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const dispatch = useDispatch<AppDispatch>();
+  const { login, isLoading, error } = useAuth();
   const router = useRouter();
-  const { loading, error } = useSelector((state: RootState) => state.user);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -29,11 +26,11 @@ export default function LoginScreen() {
     }
 
     try {
-      await dispatch(loginUser({ email, password })).unwrap();
+      await login({ email, password });
       // Navigate to home on success (onboarding should already be completed)
       router.push("/(tabs)/home" as any);
     } catch (error) {
-      // Error is handled in the redux store
+      // Error is handled by the useAuth hook
       console.log("Login failed", error);
     }
   };
@@ -90,7 +87,7 @@ export default function LoginScreen() {
         <Button
           title="Login"
           onPress={handleLogin}
-          loading={loading}
+          loading={isLoading}
           style={styles.loginButton}
         />
 

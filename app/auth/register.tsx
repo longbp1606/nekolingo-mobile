@@ -8,22 +8,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { registerUser } from "../../stores/userSlice";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function RegisterScreen() {
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
+  const { register, isLoading, error } = useAuth();
   const router = useRouter();
-  const { loading, error } = useSelector((state: RootState) => state.user);
 
   const validateForm = () => {
     if (!name.trim()) {

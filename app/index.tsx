@@ -2,9 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { useSelector } from "react-redux";
+import { RootState } from "../config/store";
 import { Colors, Sizes } from "../constants";
 import { useOnboardingCheck } from "../hooks/useOnboardingCheck";
-import { RootState } from "../stores";
 
 // Debug function to clear AsyncStorage
 const clearAsyncStorage = async () => {
@@ -18,7 +18,7 @@ const clearAsyncStorage = async () => {
 
 export default function Index() {
   const { user, token, isInitialized } = useSelector(
-    (state: RootState) => state.user
+    (state: RootState) => state.auth
   );
   const { isCompleted: onboardingCompleted, isLoaded: onboardingLoaded } =
     useSelector((state: RootState) => state.onboarding);
@@ -42,7 +42,7 @@ export default function Index() {
     console.log("Token:", token);
     console.log("Onboarding Completed:", onboardingCompleted);
     console.log("Onboarding Loaded:", onboardingLoaded);
-    console.log("User Language:", user?.selectedLanguage);
+    console.log("User Learning Language:", user?.learning_language);
     console.log("========================");
 
     // NEW LOGIC: Onboarding first, then authentication
