@@ -13,6 +13,7 @@ import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
 import { AppDispatch, RootState } from "../../stores";
 import { loginUser } from "../../stores/userSlice";
+import { StorageUtils } from "../../utils/storage";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -23,17 +24,15 @@ export default function LoginScreen() {
   const { loading, error } = useSelector((state: RootState) => state.user);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      // Show validation error
-      return;
-    }
+    if (!email || !password) return;
 
     try {
-      await dispatch(loginUser({ email, password })).unwrap();
-      // Navigate to home on success (onboarding should already be completed)
+      const result = await dispatch(loginUser({ email, password })).unwrap();
+
+      await StorageUtils.saveUserSession(result.user, result.token);
+
       router.push("/(tabs)/home" as any);
     } catch (error) {
-      // Error is handled in the redux store
       console.log("Login failed", error);
     }
   };
