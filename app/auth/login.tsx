@@ -20,10 +20,7 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      // Show validation error
-      return;
-    }
+    if (!email || !password) return;
 
     try {
       await login({ email, password });

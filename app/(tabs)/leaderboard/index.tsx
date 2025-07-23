@@ -1,18 +1,53 @@
-import React, { useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { useSelector } from 'react-redux';
+import LeaderboardService from '../../../services/leaderboardService';
+import { RootState } from '../../../stores';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+interface DetailedUser {
+  rank: number;
+  _id: string;
+  name: string;
+  email: string;
+  score: string;
+  xp: number;
+  avatar: string;
+  color: string;
+  isOnline: boolean;
+  level: number;
+  streak: number;
+  hearts: number;
+}
+
+interface TournamentLeaderboards {
+  bronze: DetailedUser[];
+  silver: DetailedUser[];
+  gold: DetailedUser[];
+  diamond: DetailedUser[];
+}
+
 const LeaderboardScreen = () => {
   const [selectedTournament, setSelectedTournament] = useState<'bronze' | 'silver' | 'gold' | 'diamond'>('bronze');
+  const [leaderboardData, setLeaderboardData] = useState<TournamentLeaderboards | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { user } = useSelector((state: RootState) => state.user);
 
   const theme = {
     color: {
@@ -39,84 +74,81 @@ const LeaderboardScreen = () => {
     bronze: {
       icon: require('../../../assets/images/bronze-medal.png'),
       title: 'Giải đấu Đồng',
-      subtitle: 'Top 15 sẽ được thăng hạng lên giải đấu cao hơn',
+      subtitle: 'Dưới 500 XP - Top 15 sẽ được thăng hạng',
       gradient: 'linear-gradient(135deg, #CD7F32, #F4E4BC)',
       backgroundColor: '#64380dff',
-      data: [
-        { rank: 1, name: 'xFaKvB9u', score: '164 KN', avatar: 'X', color: '#ff9500', isOnline: true },
-        { rank: 2, name: 'blevins', score: '117 KN', avatar: 'B', color: '#ff69b4', isOnline: true },
-        { rank: 3, name: 'tu.8zPhLRDVr49BC', score: '30 KN', avatar: 'T', color: '#ff4444', isOnline: true },
-        { rank: 4, name: 'kaito', score: '30 KN', avatar: 'K', color: '#ff4444', isOnline: true },
-        { rank: 5, name: 'Eduardo Picano', score: '28 KN', avatar: 'E', color: '#9966ff', isOnline: true },
-        { rank: 6, name: 'tu.8zPhLBrEOdxpl', score: '20 KN', avatar: 'T', color: '#4B4B4B', isOnline: true },
-        { rank: 7, name: 'Khanh Tr?n Th?y H?ng', score: '15 KN', avatar: 'K', color: '#ff4444', isOnline: true },
-        { rank: 8, name: 'xFaKvB9u', score: '164 KN', avatar: 'X', color: '#ff9500', isOnline: true },
-        { rank: 9, name: 'blevins', score: '117 KN', avatar: 'B', color: '#ff69b4', isOnline: true },
-        { rank: 10, name: 'tu.8zPhLRDVr49BC', score: '30 KN', avatar: 'T', color: '#ff4444', isOnline: true },
-        { rank: 11, name: 'kaito', score: '30 KN', avatar: 'K', color: '#ff4444', isOnline: true },
-        { rank: 12, name: 'Eduardo Picano', score: '28 KN', avatar: 'E', color: '#9966ff', isOnline: true },
-        { rank: 13, name: 'tu.8zPhLBrEOdxpl', score: '20 KN', avatar: 'T', color: '#4B4B4B', isOnline: true },
-        { rank: 14, name: 'Khanh', score: '15 KN', avatar: 'K', color: '#ff4444', isOnline: true },
-        { rank: 15, name: 'Khanh Tr?n Th?y H?ng', score: '15 KN', avatar: 'K', color: '#ff4444', isOnline: true },
-      ]
     },
     silver: {
       icon: require('../../../assets/images/silver-medal.png'),
       title: 'Giải đấu Bạc',
-      subtitle: 'Top 10 sẽ được thăng hạng lên giải đấu cao hơn',
+      subtitle: '500 - 1999 XP - Top 10 sẽ được thăng hạng',
       gradient: 'linear-gradient(135deg, #C0C0C0, #E8E8E8)',
       backgroundColor: '#d4d4d4ff',
-      data: [
-        { rank: 1, name: 'ProGamer2024', score: '892 KN', avatar: 'P', color: '#ff9500', isOnline: true },
-        { rank: 2, name: 'SilverKnight', score: '756 KN', avatar: 'S', color: '#ff69b4', isOnline: true },
-        { rank: 3, name: 'MasterChef', score: '689 KN', avatar: 'M', color: '#ff4444', isOnline: false },
-        { rank: 4, name: 'CodeWarrior', score: '634 KN', avatar: 'C', color: '#4CAF50', isOnline: true },
-        { rank: 5, name: 'NightHawk', score: '598 KN', avatar: 'N', color: '#9966ff', isOnline: true },
-        { rank: 6, name: 'DragonSlayer', score: '567 KN', avatar: 'D', color: '#ff4444', isOnline: false },
-        { rank: 7, name: 'PhoenixRise', score: '523 KN', avatar: 'P', color: '#ff9500', isOnline: true }
-      ]
     },
     gold: {
       icon: require('../../../assets/images/gold-medal.png'),
       title: 'Giải đấu Vàng',
-      subtitle: 'Top 5 sẽ được thăng hạng lên giải đấu cao hơn',
+      subtitle: '2000 - 9999 XP - Top 5 sẽ được thăng hạng',
       gradient: 'linear-gradient(135deg, #FFD700, #FFF8DC)',
       backgroundColor: '#faea90ff',
-      data: [
-        { rank: 1, name: 'GoldLegend', score: '2.1M KN', avatar: 'G', color: '#ff9500', isOnline: true },
-        { rank: 2, name: 'ElitePlayer', score: '1.8M KN', avatar: 'E', color: '#ff69b4', isOnline: true },
-        { rank: 3, name: 'ChampionX', score: '1.6M KN', avatar: 'C', color: '#ff4444', isOnline: true },
-        { rank: 4, name: 'GoldenEagle', score: '1.4M KN', avatar: 'G', color: '#4CAF50', isOnline: false },
-        { rank: 5, name: 'KingOfGames', score: '1.2M KN', avatar: 'K', color: '#9966ff', isOnline: true },
-        { rank: 6, name: 'GoldRush', score: '1.1M KN', avatar: 'G', color: '#ff4444', isOnline: true },
-        { rank: 7, name: 'UltimateWin', score: '980K KN', avatar: 'U', color: '#4B4B4B', isOnline: true }
-      ]
     },
     diamond: {
       icon: require('../../../assets/images/diamond.png'),
       title: 'Giải đấu Kim Cương',
-      subtitle: 'Giải đấu cao nhất - Chỉ dành cho những người chơi xuất sắc nhất',
+      subtitle: 'Trên 10000 XP - Giải đấu cao nhất',
       gradient: 'linear-gradient(135deg, #00BFFF, #E0F6FF)',
       backgroundColor: '#caeefaff',
-      data: [
-        { rank: 1, name: 'DiamondKing', score: '10.5M KN', avatar: 'D', color: '#00BFFF', isOnline: true },
-        { rank: 2, name: 'CrystalMaster', score: '9.8M KN', avatar: 'C', color: '#9966ff', isOnline: true },
-        { rank: 3, name: 'PlatinumPro', score: '9.2M KN', avatar: 'P', color: '#E5E4E2', isOnline: true },
-        { rank: 4, name: 'DiamondQueen', score: '8.7M KN', avatar: '', color: '#ff69b4', isOnline: false },
-        { rank: 5, name: 'GemLord', score: '8.1M KN', avatar: '💍', color: '#FFD700', isOnline: true },
-        { rank: 6, name: 'CrystalHeart', score: '7.8M KN', avatar: '💖', color: '#ff4444', isOnline: true },
-        { rank: 7, name: 'DiamondStorm', score: '7.3M KN', avatar: '⚡', color: '#ff9500', isOnline: true }
-      ]
     }
   };
 
-  const currentTournament = tournaments[selectedTournament];
+  const loadLeaderboardData = async (showLoading = true) => {
+    try {
+      if (showLoading) {
+        setLoading(true);
+      }
+      setError(null);
 
-  const handleTournamentChange = (tournamentType: any) => {
+      const data = await LeaderboardService.getTournamentLeaderboards();
+      setLeaderboardData(data);
+
+      if (user && user.id) {
+        const userRank = await LeaderboardService.getCurrentUserRank(user.id);
+        if (userRank) {
+          setSelectedTournament(userRank.tournament as any);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+      setError(error instanceof Error ? error.message : 'Có lỗi xảy ra khi tải bảng xếp hạng');
+      Alert.alert('Lỗi', 'Không thể tải bảng xếp hạng. Vui lòng thử lại sau.');
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLeaderboardData();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadLeaderboardData(false);
+    }, [])
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadLeaderboardData(false);
+  };
+
+  const handleTournamentChange = (tournamentType: 'bronze' | 'silver' | 'gold' | 'diamond') => {
     setSelectedTournament(tournamentType);
   };
 
-  const getRankColor = (rank: any) => {
+  const getRankColor = (rank: number) => {
     switch (rank) {
       case 1: return '#ffd900ff';
       case 2: return '#c0c0c0';
@@ -125,9 +157,53 @@ const LeaderboardScreen = () => {
     }
   };
 
+  const formatScore = (xp: number) => {
+    if (xp >= 1000000) {
+      return `${(xp / 1000000).toFixed(1)}M XP`;
+    } else if (xp >= 1000) {
+      return `${(xp / 1000).toFixed(1)}K XP`;
+    }
+    return `${xp} XP`;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.color.primary} />
+        <Text style={styles.loadingText}>Đang tải bảng xếp hạng...</Text>
+      </View>
+    );
+  }
+
+  if (error && !leaderboardData) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Có lỗi xảy ra</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => loadLeaderboardData()}>
+          <Text style={styles.retryButtonText}>Thử lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const currentTournament = tournaments[selectedTournament];
+  const currentData = leaderboardData?.[selectedTournament] || [];
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.color.primary]}
+            tintColor={theme.color.primary}
+          />
+        }
+      >
         <View style={styles.fixedHeader}>
           <View style={styles.tournamentSelector}>
             {Object.entries(tournaments).map(([key, tournament]) => (
@@ -138,12 +214,13 @@ const LeaderboardScreen = () => {
                   selectedTournament === key && styles.tournamentOptionActive,
                   { backgroundColor: tournament.backgroundColor }
                 ]}
-                onPress={() => handleTournamentChange(key)}
+                onPress={() => handleTournamentChange(key as any)}
               >
-                <Image style={[
-                  styles.tournamentIcon,
-                  selectedTournament === key && styles.tournamentIconActive
-                ]}
+                <Image
+                  style={[
+                    styles.tournamentIcon,
+                    selectedTournament === key && styles.tournamentIconActive
+                  ]}
                   source={tournament.icon}
                 />
               </TouchableOpacity>
@@ -155,36 +232,52 @@ const LeaderboardScreen = () => {
             <Text style={styles.tournamentSubtitle}>
               {currentTournament.subtitle}
             </Text>
-            <Text style={styles.tournamentDays}>6 ngày</Text>
           </View>
         </View>
 
         {/* Leaderboard Container */}
         <View style={styles.leaderboardContainer}>
-          <View style={styles.leaderboardList}>
-            {currentTournament.data.map((player: any, index: any) => (
-              <View key={index} style={styles.leaderboardItem}>
-                <View style={[styles.rankBadge, { backgroundColor: getRankColor(player.rank) }]}>
-                  <Text style={styles.rankText}>{player.rank}</Text>
-                </View>
-
-                <View style={styles.avatarContainer}>
-                  <View style={[styles.userAvatar, { backgroundColor: player.color }]}>
-                    <Text style={styles.avatarText}>{player.avatar}</Text>
+          {currentData.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Chưa có người chơi trong giải đấu này</Text>
+            </View>
+          ) : (
+            <View style={styles.leaderboardList}>
+              {currentData.map((player, index) => (
+                <View
+                  key={player._id}
+                  style={[
+                    styles.leaderboardItem,
+                    user?.id === player._id && styles.currentUserItem
+                  ]}
+                >
+                  <View style={[styles.rankBadge, { backgroundColor: getRankColor(player.rank) }]}>
+                    <Text style={styles.rankText}>{player.rank}</Text>
                   </View>
-                  {player.isOnline && <View style={styles.onlineIndicator} />}
-                </View>
 
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName} numberOfLines={1}>
-                    {player.name}
-                  </Text>
-                </View>
+                  <View style={styles.avatarContainer}>
+                    <View style={[styles.userAvatar, { backgroundColor: player.color }]}>
+                      <Text style={styles.avatarText}>{player.avatar}</Text>
+                    </View>
+                    {player.isOnline && <View style={styles.onlineIndicator} />}
+                  </View>
 
-                <Text style={styles.userScore}>{player.score}</Text>
-              </View>
-            ))}
-          </View>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName} numberOfLines={1}>
+                      {player.name}
+                      {user?.id === player._id && ' (Bạn)'}
+                    </Text>
+                    <View style={styles.userStats}>
+                      <Text style={styles.userLevel}>Level {player.level}</Text>
+                      <Text style={styles.userStreak}>🔥 {player.streak}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.userScore}>{formatScore(player.xp)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -198,6 +291,17 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   fixedHeader: {
     backgroundColor: '#FFFFFF',
@@ -256,7 +360,7 @@ const styles = StyleSheet.create({
   tournamentTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#4B4B4B333',
+    color: '#4B4B4B',
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -265,13 +369,6 @@ const styles = StyleSheet.create({
     color: '#666666',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 4,
-  },
-  tournamentDays: {
-    fontSize: 14,
-    color: '#ff9500',
-    fontWeight: '500',
-    textAlign: 'center',
   },
   leaderboardContainer: {
     backgroundColor: '#FFFFFF',
@@ -345,12 +442,73 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4B4B4B333',
+    color: '#4B4B4B',
   },
   userScore: {
     fontSize: 14,
     fontWeight: '500',
     color: '#666666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    padding: 32,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF4B4B',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#00C2D1',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+
+  currentUserItem: {
+    backgroundColor: '#CCF2F5',
+    borderWidth: 2,
+    borderColor: '#00C2D1',
+  },
+  userStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  userLevel: {
+    fontSize: 12,
+    color: '#777',
+    fontWeight: '500',
+  },
+  userStreak: {
+    fontSize: 12,
+    color: '#FF6B35',
+    fontWeight: '500',
   },
 });
 
