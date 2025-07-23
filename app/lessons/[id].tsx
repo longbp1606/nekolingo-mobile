@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -8,25 +8,25 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button, Card } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { fetchLessonById } from "../../stores/lessonsSlice";
+import { useGetLessonByIdQuery } from "../../services/lessonApiService";
 
 export default function LessonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { currentLesson, loading, error } = useSelector(
-    (state: RootState) => state.lessons
-  );
 
-  useEffect(() => {
-    if (id) {
-      dispatch(fetchLessonById(id));
+  const {
+    data: currentLesson,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useGetLessonByIdQuery(
+    { lessonId: id || "" },
+    {
+      skip: !id,
     }
-  }, [dispatch, id]);
+  );
 
   const handleStartLesson = () => {
     // Navigate to the exercise screen with lesson data
@@ -68,10 +68,12 @@ export default function LessonDetailScreen() {
           <Text style={styles.title}>Lesson</Text>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Error: {error}</Text>
+          <Text style={styles.errorText}>
+            {error ? "Failed to load lesson" : "Unknown error"}
+          </Text>
           <Button
             title="Try Again"
-            onPress={() => id && dispatch(fetchLessonById(id))}
+            onPress={() => refetch()}
             style={styles.retryButton}
           />
         </View>
@@ -114,7 +116,7 @@ export default function LessonDetailScreen() {
         <Card style={styles.lessonCard}>
           <View style={styles.lessonHeader}>
             <Text style={styles.lessonTitle}>{currentLesson.title}</Text>
-            <Text style={styles.lessonLevel}>Level {currentLesson.level}</Text>
+            <Text style={styles.lessonLevel}>Order {currentLesson.order}</Text>
           </View>
 
           <Text style={styles.lessonDescription}>
@@ -123,19 +125,17 @@ export default function LessonDetailScreen() {
 
           <View style={styles.progressSection}>
             <Text style={styles.progressLabel}>Status</Text>
-            <Text style={styles.progressText}>
-              {currentLesson.isCompleted ? "Completed" : "Not Started"}
-            </Text>
+            <Text style={styles.progressText}>Ready to start</Text>
           </View>
 
           <View style={styles.rewardSection}>
             <Text style={styles.rewardLabel}>Completion Reward</Text>
-            <Text style={styles.rewardXP}>+{currentLesson.xpReward} XP</Text>
+            <Text style={styles.rewardXP}>+{currentLesson.xp_reward} XP</Text>
           </View>
         </Card>
 
         <Button
-          title={currentLesson.isCompleted ? "Practice Again" : "Start Lesson"}
+          title="Start Lesson"
           onPress={handleStartLesson}
           style={styles.startButton}
         />

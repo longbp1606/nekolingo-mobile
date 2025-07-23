@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -9,11 +10,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import { BackButton, Button, OnboardingProgressBar } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch } from "../../stores";
-import { setCurrentStep, setLevel } from "../../stores/onboardingSlice";
 
 interface LevelOption {
   key: number;
@@ -57,17 +55,21 @@ const levels: LevelOption[] = [
 export default function LevelSelectionScreen() {
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
 
   const handleLevelSelect = (levelKey: number) => {
     setSelectedLevel(levelKey);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedLevel !== null) {
-      dispatch(setLevel(selectedLevel));
-      dispatch(setCurrentStep(7));
-      router.push("/onboarding/results-preview" as any);
+      try {
+        // Store the selected level
+        await AsyncStorage.setItem("selectedLevel", selectedLevel.toString());
+
+        router.push("/onboarding/results-preview" as any);
+      } catch (error) {
+        console.error("Error saving level:", error);
+      }
     }
   };
 

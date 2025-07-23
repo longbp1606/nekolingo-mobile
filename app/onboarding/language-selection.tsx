@@ -1,5 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -9,49 +10,40 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { Language } from "../../services/languageService";
-import { AppDispatch, RootState } from "../../stores";
-import {
-  fetchLanguages,
-  setSelectedLanguageTo,
-} from "../../stores/languageSlice";
-import { setCurrentStep, setLanguage } from "../../stores/onboardingSlice";
-import { updateUserSettings } from "../../stores/userSlice";
+import { useGetLanguagesQuery } from "../../services/languageApiService";
 
 export default function LanguageSelectionScreen() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
 
-  const { languages, loading, error } = useSelector(
-    (state: RootState) => state.language
-  );
+  const {
+    data: languages,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useGetLanguagesQuery();
 
-  useEffect(() => {
-    dispatch(fetchLanguages());
-  }, [dispatch]);
-
-  const handleLanguageSelect = (language: Language) => {
+  const handleLanguageSelect = (language: any) => {
     setSelectedLanguage(language.code);
-    dispatch(setSelectedLanguageTo(language));
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedLanguage) {
-      // Update user's selected language in Redux
-      dispatch(updateUserSettings({ selectedLanguage }));
-      dispatch(setLanguage(selectedLanguage));
-      dispatch(setCurrentStep(4));
+      try {
+        // Store the selected language
+        await AsyncStorage.setItem("selectedLanguage", selectedLanguage);
 
-      // Navigate to source selection
-      router.push("/onboarding/source-selection" as any);
+        // Navigate to source selection
+        router.push("/onboarding/source-selection" as any);
+      } catch (error) {
+        console.error("Error saving language:", error);
+      }
     }
   };
 
-  const renderLanguageItem = ({ item }: { item: Language }) => (
+  const renderLanguageItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[
         styles.languageItem,
@@ -85,14 +77,14 @@ export default function LanguageSelectionScreen() {
     );
   }
 
-  if (error && languages.length === 0) {
+  if (error && (!languages || languages.length === 0)) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load languages</Text>
           <Button
             title="Retry"
-            onPress={() => dispatch(fetchLanguages())}
+            onPress={() => refetch()}
             style={styles.retryButton}
           />
         </View>
@@ -108,7 +100,7 @@ export default function LanguageSelectionScreen() {
       </View>
 
       <FlatList
-        data={languages}
+        data={languages || []}
         keyExtractor={(item) => item._id}
         renderItem={renderLanguageItem}
         style={styles.languageList}

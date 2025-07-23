@@ -25,6 +25,41 @@ export interface CoursesResponse {
   };
 }
 
+export interface CourseMetadata {
+  course: {
+    _id: string;
+    title: string;
+    description: string;
+    language_from: string;
+    language_to: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
+  topics: {
+    _id: string;
+    title: string;
+    order: number;
+    course: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+    lessons: {
+      _id: string;
+      title: string;
+      order: number;
+      xp_reward: number;
+      topic: string;
+      type: string[];
+      mode: string;
+      description: string;
+      createdAt: string;
+      updatedAt: string;
+      __v: number;
+    }[];
+  }[];
+}
+
 export const courseApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCourses: builder.query<
@@ -44,7 +79,15 @@ export const courseApi = apiSlice.injectEndpoints({
       query: (id) => `/course/${id}`,
       providesTags: (result, error, id) => [{ type: "Course", id }],
     }),
+    getCourseMetadata: builder.query<CourseMetadata, string>({
+      query: (id) => `/course/metadata/${id}`,
+      providesTags: (result, error, id) => [{ type: "Course", id }],
+    }),
   }),
 });
 
-export const { useGetCoursesQuery, useGetCourseByIdQuery } = courseApi;
+export const {
+  useGetCoursesQuery,
+  useGetCourseByIdQuery,
+  useGetCourseMetadataQuery,
+} = courseApi;

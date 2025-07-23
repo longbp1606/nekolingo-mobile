@@ -8,18 +8,23 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { fetchLessonById } from "../../stores/lessonsSlice";
+import { useGetLessonByIdQuery } from "../../services/lessonApiService";
 
 export default function ExerciseScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { currentLesson, loading, error } = useSelector(
-    (state: RootState) => state.lessons
+
+  const {
+    data: currentLesson,
+    isLoading: loading,
+    error,
+  } = useGetLessonByIdQuery(
+    { lessonId: lessonId || "" },
+    {
+      skip: !lessonId,
+    }
   );
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -32,17 +37,11 @@ export default function ExerciseScreen() {
   const correctAnswersRef = useRef(0);
 
   useEffect(() => {
-    if (lessonId) {
-      dispatch(fetchLessonById(lessonId));
-    }
-  }, [dispatch, lessonId]);
-
-  useEffect(() => {
     correctAnswersRef.current = correctAnswers;
   }, [correctAnswers]);
 
-  const currentExercise = currentLesson?.exercises[currentExerciseIndex];
-  const totalExercises = currentLesson?.exercises.length || 0;
+  const currentExercise = currentLesson?.exercises?.[currentExerciseIndex];
+  const totalExercises = currentLesson?.exercises?.length || 0;
   const progress =
     totalExercises > 0 ? (currentExerciseIndex + 1) / totalExercises : 0;
 
@@ -58,9 +57,9 @@ export default function ExerciseScreen() {
     setIsProcessing(true);
     setIsAnswerSubmitted(true);
 
-    const isCorrect = Array.isArray(currentExercise.correctAnswer)
-      ? currentExercise.correctAnswer.includes(selectedAnswer)
-      : currentExercise.correctAnswer === selectedAnswer;
+    const isCorrect = Array.isArray(currentExercise.correct_answer)
+      ? currentExercise.correct_answer.includes(selectedAnswer)
+      : currentExercise.correct_answer === selectedAnswer;
 
     if (isCorrect) {
       setCorrectAnswers((prev) => {
@@ -97,7 +96,7 @@ export default function ExerciseScreen() {
     const finalCorrectAnswers = correctAnswersRef.current;
     const score = Math.round((finalCorrectAnswers / totalExercises) * 100);
     const xpEarned = Math.round(
-      (finalCorrectAnswers / totalExercises) * (currentLesson?.xpReward || 10)
+      (finalCorrectAnswers / totalExercises) * (currentLesson?.xp_reward || 10)
     );
     const perfectLesson = finalCorrectAnswers === totalExercises;
     const streakIncreased = finalCorrectAnswers / totalExercises >= 0.7;
@@ -131,9 +130,9 @@ export default function ExerciseScreen() {
       ];
     }
 
-    const isCorrect = Array.isArray(currentExercise?.correctAnswer)
-      ? currentExercise?.correctAnswer.includes(answer)
-      : currentExercise?.correctAnswer === answer;
+    const isCorrect = Array.isArray(currentExercise?.correct_answer)
+      ? currentExercise?.correct_answer.includes(answer)
+      : currentExercise?.correct_answer === answer;
 
     if (isCorrect) {
       return [styles.answerButton, styles.correctAnswer];
@@ -154,9 +153,9 @@ export default function ExerciseScreen() {
       ];
     }
 
-    const isCorrect = Array.isArray(currentExercise?.correctAnswer)
-      ? currentExercise?.correctAnswer.includes(answer)
-      : currentExercise?.correctAnswer === answer;
+    const isCorrect = Array.isArray(currentExercise?.correct_answer)
+      ? currentExercise?.correct_answer.includes(answer)
+      : currentExercise?.correct_answer === answer;
 
     if (isCorrect) {
       return [styles.answerText, styles.correctAnswerText];
@@ -201,7 +200,9 @@ export default function ExerciseScreen() {
           <Text style={styles.title}>Exercise</Text>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error || "Exercise not found"}</Text>
+          <Text style={styles.errorText}>
+            {error ? "Failed to load exercise" : "Exercise not found"}
+          </Text>
           <Button
             title="Go Back"
             onPress={() => router.back()}
@@ -245,7 +246,7 @@ export default function ExerciseScreen() {
 
           {currentExercise.options && (
             <View style={styles.optionsContainer}>
-              {currentExercise.options.map((option, index) => (
+              {currentExercise.options.map((option: string, index: number) => (
                 <TouchableOpacity
                   key={index}
                   style={getAnswerStyle(option)}
@@ -255,13 +256,6 @@ export default function ExerciseScreen() {
                   <Text style={getAnswerTextStyle(option)}>{option}</Text>
                 </TouchableOpacity>
               ))}
-            </View>
-          )}
-
-          {currentExercise.hints && currentExercise.hints.length > 0 && (
-            <View style={styles.hintContainer}>
-              <Text style={styles.hintLabel}>💡 Hint:</Text>
-              <Text style={styles.hintText}>{currentExercise.hints[0]}</Text>
             </View>
           )}
         </Card>
@@ -279,7 +273,11 @@ export default function ExerciseScreen() {
             />
           ) : (
             <Button
-              title={currentExerciseIndex < totalExercises - 1 ? "Next" : "View Results"}
+              title={
+                currentExerciseIndex < totalExercises - 1
+                  ? "Next"
+                  : "View Results"
+              }
               onPress={handleNext}
               disabled={isProcessing}
               style={[

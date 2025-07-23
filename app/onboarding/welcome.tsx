@@ -2,18 +2,13 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch } from "../../stores";
-import { setCurrentStep } from "../../stores/onboardingSlice";
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
 
   const handleContinue = () => {
-    dispatch(setCurrentStep(3));
     router.push("/onboarding/language-selection");
   };
 

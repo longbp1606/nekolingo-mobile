@@ -1,12 +1,11 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { BackButton, Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { setupRegisterUser } from "../../stores/userSlice";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function OnboardingRegisterScreen() {
   const [email, setEmail] = useState("");
@@ -15,10 +14,8 @@ export default function OnboardingRegisterScreen() {
   const [username, setUsername] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { loading, error } = useSelector((state: RootState) => state.user);
-  const onboardingState = useSelector((state: RootState) => state.onboarding);
+  const { register, isLoading: loading, error } = useAuth();
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -65,39 +62,39 @@ export default function OnboardingRegisterScreen() {
       return;
     }
 
-    // Get language selections from language slice
-    const languageState = useSelector((state: RootState) => state.language);
-    const language_from = languageState.selectedLanguageFrom?.code || "vi"; // Default to Vietnamese
-    const language_to =
-      languageState.selectedLanguageTo?.code ||
-      onboardingState.selectedLanguage ||
-      "en";
-    const current_level = onboardingState.selectedLevel || 1;
-
-    // Validate that a target language is selected
-    if (!language_to || language_to === language_from) {
-      setValidationError(
-        "Please select a language to learn that is different from your native language"
-      );
-      return;
-    }
-
     try {
-      await dispatch(
-        setupRegisterUser({
-          email,
-          password,
-          username: username || undefined,
-          language_from,
-          language_to,
-          current_level,
-        })
-      ).unwrap();
+      // Get onboarding data from AsyncStorage
+      const selectedLanguage =
+        (await AsyncStorage.getItem("selectedLanguage")) || "en";
+      const selectedLevel =
+        (await AsyncStorage.getItem("selectedLevel")) || "1";
+
+      // Default languages - can be customized based on requirements
+      const profile_language = "vi"; // Default to Vietnamese
+      const learning_language = selectedLanguage;
+
+      // Validate that a target language is selected
+      if (!learning_language || learning_language === profile_language) {
+        setValidationError(
+          "Please select a language to learn that is different from your native language"
+        );
+        return;
+      }
+
+      const result = await register({
+        email,
+        password,
+        username: username || email.split("@")[0], // Use email prefix if no username
+        full_name: username || email.split("@")[0],
+        profile_language,
+        learning_language,
+      });
 
       // Navigate to home on success
       router.push("/(tabs)/home" as any);
     } catch (error) {
       console.log("Registration failed", error);
+      setValidationError("Registration failed. Please try again.");
     }
   };
 
@@ -115,7 +112,9 @@ export default function OnboardingRegisterScreen() {
 
         <View style={styles.formContainer}>
           {(error || validationError) && (
-            <Text style={styles.errorText}>{error || validationError}</Text>
+            <Text style={styles.errorText}>
+              {validationError || (error ? "Registration failed" : "")}
+            </Text>
           )}
 
           <View style={styles.inputContainer}>

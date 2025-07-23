@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -9,11 +10,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import { BackButton, Button, OnboardingProgressBar } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch } from "../../stores";
-import { completeOnboarding, setGoal } from "../../stores/onboardingSlice";
+import { useOnboardingCheck } from "../../hooks/useOnboardingCheck";
 
 interface GoalOption {
   key: string;
@@ -52,17 +51,25 @@ const goals: GoalOption[] = [
 export default function GoalSelectionScreen() {
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+  const { completeOnboarding } = useOnboardingCheck();
 
   const handleGoalSelect = (goalKey: string) => {
     setSelectedGoal(goalKey);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedGoal) {
-      dispatch(setGoal(selectedGoal));
-      dispatch(completeOnboarding()); // Mark onboarding as completed
-      router.push("/onboarding/register" as any);
+      try {
+        // Store the selected goal
+        await AsyncStorage.setItem("selectedGoal", selectedGoal);
+
+        // Complete onboarding
+        await completeOnboarding();
+
+        router.push("/onboarding/register" as any);
+      } catch (error) {
+        console.error("Error saving goal and completing onboarding:", error);
+      }
     }
   };
 

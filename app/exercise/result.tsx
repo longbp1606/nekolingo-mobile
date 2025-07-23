@@ -9,11 +9,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
+import { RootState } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { updateUserSettings } from "../../stores/userSlice";
 
 interface ExerciseResult {
   lessonId: string;
@@ -26,9 +25,7 @@ interface ExerciseResult {
 }
 
 export default function ExerciseResultScreen() {
-
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const params = useLocalSearchParams<{
     lessonId: string;
     score: string;
@@ -39,13 +36,13 @@ export default function ExerciseResultScreen() {
     streakIncreased?: string;
   }>();
 
-
-  const { user } = useSelector((state: RootState) => state.user);
+  const { user } = useSelector((state: RootState) => state.auth);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
 
   const getResultImage = () => {
     if (result.perfectLesson) return require("../../assets/images/grade.png");
-    if (accuracyPercentage >= 70) return require("../../assets/images/flower.png");
+    if (accuracyPercentage >= 70)
+      return require("../../assets/images/flower.png");
     return require("../../assets/images/love.png");
   };
 
@@ -63,45 +60,23 @@ export default function ExerciseResultScreen() {
     streakIncreased: params.streakIncreased === "true",
   };
 
-
-  const accuracyPercentage = result.totalQuestions > 0
-    ? (result.correctAnswers / result.totalQuestions) * 100
-    : 0;
-
+  const accuracyPercentage =
+    result.totalQuestions > 0
+      ? (result.correctAnswers / result.totalQuestions) * 100
+      : 0;
 
   useEffect(() => {
-
-    // Prevent multiple updates
-    if (hasUpdatedProgress.current) {
-      return;
-    }
-
-    // Update user progress only once
-    if (result.xpEarned > 0 && user && user.id) {
-
-      dispatch(
-        updateUserSettings({
-          xp: (user.xp || 0) + result.xpEarned,
-          streak: result.streakIncreased ? (user.streak || 0) + 1 : user.streak,
-        })
-      );
-
-      // Mark as updated
-      hasUpdatedProgress.current = true;
-    }
-
     // Show streak celebration if streak increased
-    if (result.streakIncreased && !hasUpdatedProgress.current) {
+    if (result.streakIncreased) {
       const timer = setTimeout(() => {
         setShowStreakCelebration(true);
       }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [params.lessonId]); // Only depend on lessonId to prevent re-runs for same lesson
+  }, [result.streakIncreased]);
 
   const handleContinue = () => {
-
     if (showStreakCelebration) {
       router.push("/streak/celebration");
     } else {
@@ -135,8 +110,8 @@ export default function ExerciseResultScreen() {
               {result.perfectLesson
                 ? "Perfect!"
                 : accuracyPercentage >= 70
-                  ? "Great Job!"
-                  : "Keep Trying!"}
+                ? "Great Job!"
+                : "Keep Trying!"}
             </Text>
             <Image source={getResultImage()} style={styles.resultEmoji} />
           </View>
@@ -163,7 +138,11 @@ export default function ExerciseResultScreen() {
               {result.correctAnswers} of {result.totalQuestions} correct
             </Text>
             <ProgressBar
-              progress={result.totalQuestions > 0 ? result.correctAnswers / result.totalQuestions : 0}
+              progress={
+                result.totalQuestions > 0
+                  ? result.correctAnswers / result.totalQuestions
+                  : 0
+              }
               style={styles.progressBar}
             />
           </View>
@@ -249,7 +228,7 @@ const styles = StyleSheet.create({
   resultEmoji: {
     width: 100,
     height: 120,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
   statsContainer: {
     flexDirection: "row",

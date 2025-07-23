@@ -1,10 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AuthResponse, User } from "./authApiService";
+import { AuthData, User } from "./authApiService";
 
 // Storage keys
 const TOKEN_KEY = "auth_token";
-const USER_KEY = "user_data";
 
 interface AuthState {
   user: User | null;
@@ -29,15 +28,11 @@ export const loadStoredAuth = createAsyncThunk(
   "auth/loadStoredAuth",
   async (_, { rejectWithValue }) => {
     try {
-      const [storedToken, storedUser] = await Promise.all([
-        AsyncStorage.getItem(TOKEN_KEY),
-        AsyncStorage.getItem(USER_KEY),
-      ]);
+      const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
 
-      if (storedToken && storedUser) {
+      if (storedToken) {
         return {
           token: storedToken,
-          user: JSON.parse(storedUser) as User,
         };
       }
 
@@ -52,12 +47,20 @@ export const loadStoredAuth = createAsyncThunk(
 // Async thunk to store auth data
 export const storeAuthData = createAsyncThunk(
   "auth/storeAuthData",
-  async (authData: AuthResponse, { rejectWithValue }) => {
+  async (authData: AuthData, { rejectWithValue }) => {
     try {
-      await Promise.all([
-        AsyncStorage.setItem(TOKEN_KEY, authData.access_token),
-        AsyncStorage.setItem(USER_KEY, JSON.stringify(authData.user)),
-      ]);
+      console.log("Storing auth data:", JSON.stringify(authData, null, 2));
+
+      // Validate required fields
+      if (!authData.accessToken) {
+        const error =
+          "Cannot store auth data: accessToken is missing or undefined";
+        console.error(error, authData);
+        return rejectWithValue(error);
+      }
+
+      // Store tokens only - user profile will be fetched separately
+      await AsyncStorage.setItem(TOKEN_KEY, authData.accessToken);
       return authData;
     } catch (error: any) {
       console.error("Failed to store auth data:", error);
@@ -71,10 +74,7 @@ export const clearAuthData = createAsyncThunk(
   "auth/clearAuthData",
   async (_, { rejectWithValue }) => {
     try {
-      await Promise.all([
-        AsyncStorage.removeItem(TOKEN_KEY),
-        AsyncStorage.removeItem(USER_KEY),
-      ]);
+      await AsyncStorage.removeItem(TOKEN_KEY);
       return null;
     } catch (error: any) {
       console.error("Failed to clear auth data:", error);
@@ -115,9 +115,9 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isInitialized = true;
         if (action.payload) {
-          state.user = action.payload.user;
           state.token = action.payload.token;
           state.isAuthenticated = true;
+          // User profile will be fetched separately if needed
         }
       })
       .addCase(loadStoredAuth.rejected, (state, action) => {
@@ -134,9 +134,9 @@ const authSlice = createSlice({
       })
       .addCase(storeAuthData.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.access_token;
+        state.token = action.payload.accessToken;
         state.isAuthenticated = true;
+        // User will be set separately when profile is fetched
       })
       .addCase(storeAuthData.rejected, (state, action) => {
         state.isLoading = false;

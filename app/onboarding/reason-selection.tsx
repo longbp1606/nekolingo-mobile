@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -9,11 +10,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import { BackButton, Button, OnboardingProgressBar } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch } from "../../stores";
-import { setCurrentStep, setReason } from "../../stores/onboardingSlice";
 
 interface ReasonOption {
   key: string;
@@ -69,17 +67,21 @@ const reasons: ReasonOption[] = [
 export default function ReasonSelectionScreen() {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
 
   const handleReasonSelect = (reasonKey: string) => {
     setSelectedReason(reasonKey);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedReason) {
-      dispatch(setReason(selectedReason));
-      dispatch(setCurrentStep(6));
-      router.push("/onboarding/level-selection" as any);
+      try {
+        // Store the selected reason
+        await AsyncStorage.setItem("selectedReason", selectedReason);
+
+        router.push("/onboarding/level-selection" as any);
+      } catch (error) {
+        console.error("Error saving reason:", error);
+      }
     }
   };
 

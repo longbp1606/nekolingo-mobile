@@ -12,6 +12,9 @@ export interface User {
   level: number;
   profile_language: string;
   learning_language: string;
+  currentCourse?: string;
+  currentLesson?: string;
+  currentTopic?: string;
   created_at: string;
   updated_at: string;
 }
@@ -30,9 +33,22 @@ export interface RegisterRequest {
   learning_language: string;
 }
 
+export interface AuthData {
+  accessToken: string;
+  refreshToken: string;
+  role: number;
+}
+
 export interface AuthResponse {
-  user: User;
-  access_token: string;
+  data: AuthData;
+  pagination: null;
+  message: string;
+}
+
+export interface ProfileResponse {
+  data: User;
+  pagination: null;
+  message: string;
 }
 
 export const authApi = apiSlice.injectEndpoints({
@@ -62,7 +78,7 @@ export const authApi = apiSlice.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
-    getProfile: builder.query<User, void>({
+    getProfile: builder.query<ProfileResponse, void>({
       query: () => "/auth/profile",
       providesTags: ["User"],
     }),

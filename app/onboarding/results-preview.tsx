@@ -2,11 +2,8 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { FlatList, Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import { BackButton, Button, OnboardingProgressBar } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch } from "../../stores";
-import { setCurrentStep } from "../../stores/onboardingSlice";
 
 interface ResultItem {
   id: string;
@@ -41,10 +38,8 @@ const results: ResultItem[] = [
 
 export default function ResultsPreviewScreen() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
 
   const handleContinue = () => {
-    dispatch(setCurrentStep(8));
     router.push("/onboarding/goal-selection" as any);
   };
 

@@ -21,11 +21,8 @@ export default function Index() {
     (state: RootState) => state.auth
   );
   const { isCompleted: onboardingCompleted, isLoaded: onboardingLoaded } =
-    useSelector((state: RootState) => state.onboarding);
+    useOnboardingCheck();
   const router = useRouter();
-
-  // Load onboarding state from AsyncStorage
-  useOnboardingCheck();
 
   // Show loading until both auth and onboarding data are loaded
   if (!isInitialized || !onboardingLoaded) {
