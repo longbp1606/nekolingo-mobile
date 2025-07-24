@@ -40,6 +40,12 @@ export default function ExerciseScreen() {
     correctAnswersRef.current = correctAnswers;
   }, [correctAnswers]);
 
+  useEffect(() => {
+    if (currentLesson) {
+      console.log("Current lesson fetched successfully:", currentLesson);
+    }
+  }, [currentLesson]);
+
   const currentExercise = currentLesson?.exercises?.[currentExerciseIndex];
   const totalExercises = currentLesson?.exercises?.length || 0;
   const progress =
