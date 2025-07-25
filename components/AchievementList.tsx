@@ -1,75 +1,17 @@
 import { useRouter } from "expo-router";
 import React from 'react';
 import {
+    ActivityIndicator,
     Image,
+    RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
 import { ROUTES } from "../config/routes";
-
-// Data
-export const percentage1: number = 40;
-export const percentage2: number = 0;
-export const percentage3: number = 100;
-
-export const achievements = [
-    {
-        level: "CẤP 1",
-        className: "fire",
-        icon: require('../assets/images/flame.png'),
-        name: "Lửa rồng",
-        progressText: "2/3",
-        percentage: percentage1,
-        desc: "Đạt chuỗi 3 ngày streak",
-    },
-    {
-        level: "CẤP 2",
-        className: "scholar",
-        icon: require('../assets/images/star-3d.png'),
-        name: "Cao nhân",
-        progressText: "237/250",
-        percentage: percentage2,
-        desc: "Đạt được 250 XP",
-    },
-    {
-        level: "CẤP 1",
-        className: "student",
-        icon: require('../assets/images/master-data.png'),
-        name: "Học giả",
-        progressText: "0/50",
-        percentage: percentage3,
-        desc: "Học 50 từ mỗi trong một khóa học",
-    },
-    {
-        level: "CẤP 1",
-        className: "fire",
-        icon: require('../assets/images/flame.png'),
-        name: "Lửa rồng",
-        progressText: "2/3",
-        percentage: percentage1,
-        desc: "Đạt chuỗi 3 ngày streak",
-    },
-    {
-        level: "CẤP 2",
-        className: "scholar",
-        icon: require('../assets/images/star-3d.png'),
-        name: "Cao nhân",
-        progressText: "237/250",
-        percentage: percentage2,
-        desc: "Đạt được 250 XP",
-    },
-    {
-        level: "CẤP 1",
-        className: "student",
-        icon: require('../assets/images/master-data.png'),
-        name: "Học giả",
-        progressText: "0/50",
-        percentage: percentage3,
-        desc: "Học 50 từ mỗi trong một khóa học",
-    },
-];
+import { useAchievements } from "../hooks/useAchievement";
 
 const theme = {
     color: {
@@ -93,15 +35,31 @@ const theme = {
 };
 
 interface AchievementListProps {
+    userId?: string;
+    userStats?: {
+        xp?: number;
+        completed_lessons?: number;
+        completed_courses?: number;
+        has_practiced?: boolean;
+        streak_days?: number;
+        perfect_lessons?: number;
+    };
     showViewAll?: boolean;
     limit?: number;
 }
 
 const AchievementList: React.FC<AchievementListProps> = ({
+    userId,
+    userStats,
     showViewAll = true,
     limit,
 }) => {
-    const router = useRouter(); // Di chuyển useRouter vào trong component
+    const router = useRouter();
+    const { achievements, loading, error, refreshAchievements } = useAchievements({
+        userId,
+        userStats
+    });
+
     const displayedAchievements = limit ? achievements.slice(0, limit) : achievements;
 
     const getIconWrapperStyle = (className: string) => {
@@ -151,57 +109,106 @@ const AchievementList: React.FC<AchievementListProps> = ({
         }
     };
 
-    return (
-        <View style={styles.card}>
-            <View style={styles.achievementSection}>
-                <View style={styles.achievementHeader}>
-                    <Text style={styles.achievementTitle}>Thành tích</Text>
-                    {showViewAll && (
-                        <TouchableOpacity onPress={() => router.push(ROUTES.ALLACHIEVEMENT as any)}>
-                            <Text style={styles.viewAllLink}>XEM TẤT CẢ</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                <View style={styles.achievementListWrapper}>
-                    {displayedAchievements.map((ach, index) => (
-                        <View key={index} style={styles.achievementItem}>
-                            {index > 0 && <View style={styles.separator} />}
-
-                            <View style={getIconWrapperStyle(ach.className)}>
-                                <Image source={ach.icon} style={styles.achievementImg} />
-                                <Text style={[styles.achievementText, { color: getTextColor(ach.className) }]}>
-                                    {ach.level}
-                                </Text>
-                            </View>
-
-                            <View style={styles.achievementInfo}>
-                                <View style={styles.achievementLead}>
-                                    <Text style={styles.achievementName}>{ach.name}</Text>
-                                    <Text style={styles.achievementDesc}>{ach.progressText}</Text>
-                                </View>
-
-                                <View style={styles.achievementProgress}>
-                                    <View style={styles.progressBar}>
-                                        <View
-                                            style={[
-                                                styles.progressFill,
-                                                {
-                                                    width: `${ach.percentage}%`,
-                                                    backgroundColor: ach.percentage === 100 ? theme.color.green : '#FFA500',
-                                                },
-                                            ]}
-                                        />
-                                    </View>
-                                </View>
-
-                                <Text style={styles.achievementDescBottom}>{ach.desc}</Text>
-                            </View>
-                        </View>
-                    ))}
+    if (loading && achievements.length === 0) {
+        return (
+            <View style={styles.card}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.color.primary} />
+                    <Text style={styles.loadingText}>Đang tải thành tích...</Text>
                 </View>
             </View>
-        </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.card}>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Lỗi: {error}</Text>
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={refreshAchievements}
+                    >
+                        <Text style={styles.retryButtonText}>Thử lại</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
+    if (achievements.length === 0) {
+        return (
+            <View style={styles.card}>
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>Chưa có thành tích nào</Text>
+                    <Text style={styles.emptySubText}>Hãy hoàn thành các bài học để mở khóa thành tích!</Text>
+                </View>
+            </View>
+        );
+    }
+
+    return (
+        <ScrollView
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl
+                    refreshing={loading}
+                    onRefresh={refreshAchievements}
+                    colors={[theme.color.primary]}
+                />
+            }
+        >
+            <View style={styles.card}>
+                <View style={styles.achievementSection}>
+                    <View style={styles.achievementHeader}>
+                        <Text style={styles.achievementTitle}>Thành tích</Text>
+                        {showViewAll && achievements.length > 0 && (
+                            <TouchableOpacity onPress={() => router.push(ROUTES.ALLACHIEVEMENT as any)}>
+                                <Text style={styles.viewAllLink}>XEM TẤT CẢ</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    <View style={styles.achievementListWrapper}>
+                        {displayedAchievements.map((ach, index) => (
+                            <View key={ach.id} style={styles.achievementItem}>
+                                {index > 0 && <View style={styles.separator} />}
+
+                                <View style={getIconWrapperStyle(ach.className)}>
+                                    <Image source={ach.icon} style={styles.achievementImg} />
+                                    <Text style={[styles.achievementText, { color: getTextColor(ach.className) }]}>
+                                        {ach.level}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.achievementInfo}>
+                                    <View style={styles.achievementLead}>
+                                        <Text style={styles.achievementName}>{ach.name}</Text>
+                                        <Text style={styles.achievementDesc}>{ach.progressText}</Text>
+                                    </View>
+
+                                    <View style={styles.achievementProgress}>
+                                        <View style={styles.progressBar}>
+                                            <View
+                                                style={[
+                                                    styles.progressFill,
+                                                    {
+                                                        width: `${ach.percentage}%`,
+                                                        backgroundColor: ach.percentage === 100 ? theme.color.green : '#FFA500',
+                                                    },
+                                                ]}
+                                            />
+                                        </View>
+                                    </View>
+
+                                    <Text style={styles.achievementDescBottom}>{ach.desc}</Text>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            </View>
+        </ScrollView>
     );
 };
 
@@ -316,6 +323,60 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: 999,
         minWidth: 2,
+    },
+    unlockedText: {
+        fontSize: 16,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: theme.color.description,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    errorText: {
+        fontSize: 16,
+        color: theme.color.red,
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    retryButton: {
+        backgroundColor: theme.color.primary,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: theme.color.white,
+        fontWeight: '600',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: theme.color.title,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    emptySubText: {
+        fontSize: 14,
+        color: theme.color.description,
+        textAlign: 'center',
     },
 });
 
