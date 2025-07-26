@@ -93,17 +93,20 @@ export default function ExerciseScreen() {
     }
   }, [currentExercise]);
 
+  // Handle match pairs change
+  const handleMatchPairs = React.useCallback(
+    (newPairs: { [key: string]: string }) => {
+      setMatchedPairs(newPairs);
+      // For match questions, we'll validate in submit
+    },
+    []
+  );
+
   // Handle reorder words change
-  const handleReorderWords = (newWords: string[]) => {
+  const handleReorderWords = React.useCallback((newWords: string[]) => {
     setReorderedWords(newWords);
     setSelectedAnswer(newWords.join(" "));
-  };
-
-  // Handle match pairs change
-  const handleMatchPairs = (newPairs: { [key: string]: string }) => {
-    setMatchedPairs(newPairs);
-    // For match questions, we'll validate in submit
-  };
+  }, []);
 
   // Handle answer selection based on question format
   const handleAnswerSelect = (answer: string) => {

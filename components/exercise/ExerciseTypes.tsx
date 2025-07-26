@@ -130,115 +130,142 @@ interface ReorderExerciseProps extends BaseExerciseProps {
   onReorderWords: (words: string[]) => void;
 }
 
-export const ReorderExercise: React.FC<ReorderExerciseProps> = ({
-  exercise,
-  selectedAnswer,
-  onAnswerSelect,
-  reorderedWords,
-  onReorderWords,
-  isAnswerSubmitted,
-  isProcessing,
-}) => {
-  const options = exercise.options as string[];
-  const correctAnswer = exercise.correct_answer as string;
-  const correctWords = correctAnswer.split(" ");
+export const ReorderExercise: React.FC<ReorderExerciseProps> = React.memo(
+  ({
+    exercise,
+    selectedAnswer,
+    onAnswerSelect,
+    reorderedWords,
+    onReorderWords,
+    isAnswerSubmitted,
+    isProcessing,
+  }) => {
+    const options = exercise.options as string[];
+    const correctAnswer = exercise.correct_answer as string;
+    const correctWords = correctAnswer.split(" ");
 
-  // State for available words and selected slots
-  const [availableWords, setAvailableWords] = useState<string[]>(options);
-  const [selectedSlots, setSelectedSlots] = useState<string[]>(
-    Array(correctWords.length).fill("")
-  );
+    // State for available words and selected slots
+    const [availableWords, setAvailableWords] = useState<string[]>(options);
+    const [selectedSlots, setSelectedSlots] = useState<string[]>(
+      Array(correctWords.length).fill("")
+    );
 
-  const handleWordClick = (word: string, index: number) => {
-    if (isAnswerSubmitted || isProcessing) return;
+    // Reset state when exercise changes
+    React.useEffect(() => {
+      setAvailableWords(options);
+      setSelectedSlots(Array(correctWords.length).fill(""));
+    }, [exercise._id, options.length, correctWords.length]);
 
-    // Find first empty slot
-    const emptySlotIndex = selectedSlots.findIndex((slot) => slot === "");
+    const handleWordClick = React.useCallback(
+      (word: string, index: number) => {
+        if (isAnswerSubmitted || isProcessing) return;
 
-    if (emptySlotIndex !== -1) {
-      // Add word to slot
-      const newSlots = [...selectedSlots];
-      newSlots[emptySlotIndex] = word;
-      setSelectedSlots(newSlots);
+        // Find first empty slot
+        const emptySlotIndex = selectedSlots.findIndex((slot) => slot === "");
 
-      // Remove word from available words
-      const newAvailable = availableWords.filter((_, i) => i !== index);
-      setAvailableWords(newAvailable);
+        if (emptySlotIndex !== -1) {
+          // Add word to slot
+          const newSlots = [...selectedSlots];
+          newSlots[emptySlotIndex] = word;
+          setSelectedSlots(newSlots);
 
-      // Update parent component
-      onReorderWords(newSlots);
-      onAnswerSelect(newSlots.join(" "));
-    }
-  };
+          // Remove word from available words
+          const newAvailable = availableWords.filter((_, i) => i !== index);
+          setAvailableWords(newAvailable);
 
-  const handleSlotClick = (slotIndex: number) => {
-    if (isAnswerSubmitted || isProcessing) return;
+          // Update parent component
+          onReorderWords(newSlots);
+          onAnswerSelect(newSlots.join(" "));
+        }
+      },
+      [
+        selectedSlots,
+        availableWords,
+        isAnswerSubmitted,
+        isProcessing,
+        onReorderWords,
+        onAnswerSelect,
+      ]
+    );
 
-    const wordToRemove = selectedSlots[slotIndex];
-    if (wordToRemove) {
-      // Remove word from slot
-      const newSlots = [...selectedSlots];
-      newSlots[slotIndex] = "";
-      setSelectedSlots(newSlots);
+    const handleSlotClick = React.useCallback(
+      (slotIndex: number) => {
+        if (isAnswerSubmitted || isProcessing) return;
 
-      // Add word back to available words
-      setAvailableWords((prev) => [...prev, wordToRemove]);
+        const wordToRemove = selectedSlots[slotIndex];
+        if (wordToRemove) {
+          // Remove word from slot
+          const newSlots = [...selectedSlots];
+          newSlots[slotIndex] = "";
+          setSelectedSlots(newSlots);
 
-      // Update parent component
-      onReorderWords(newSlots);
-      onAnswerSelect(newSlots.join(" "));
-    }
-  };
+          // Add word back to available words
+          setAvailableWords((prev) => [...prev, wordToRemove]);
 
-  const getSlotStyle = (word: string, index: number) => {
-    if (isAnswerSubmitted) {
-      const isCorrectWord = correctWords[index] === word;
-      if (isCorrectWord) {
-        return [styles.wordSlot, styles.correctSlot];
-      } else if (word) {
-        return [styles.wordSlot, styles.wrongSlot];
+          // Update parent component
+          onReorderWords(newSlots);
+          onAnswerSelect(newSlots.join(" "));
+        }
+      },
+      [
+        selectedSlots,
+        isAnswerSubmitted,
+        isProcessing,
+        onReorderWords,
+        onAnswerSelect,
+      ]
+    );
+
+    const getSlotStyle = (word: string, index: number) => {
+      if (isAnswerSubmitted) {
+        const isCorrectWord = correctWords[index] === word;
+        if (isCorrectWord) {
+          return [styles.wordSlot, styles.correctSlot];
+        } else if (word) {
+          return [styles.wordSlot, styles.wrongSlot];
+        }
       }
-    }
 
-    return [styles.wordSlot];
-  };
+      return [styles.wordSlot];
+    };
 
-  return (
-    <View style={styles.reorderContainer}>
-      <Text style={styles.reorderInstructions}>
-        Tap words to arrange them in the correct order:
-      </Text>
+    return (
+      <View style={styles.reorderContainer}>
+        <Text style={styles.reorderInstructions}>
+          Tap words to arrange them in the correct order:
+        </Text>
 
-      {/* Word slots for sentence construction */}
-      <View style={styles.sentenceContainer}>
-        {selectedSlots.map((word, index) => (
-          <TouchableOpacity
-            key={index}
-            style={getSlotStyle(word, index)}
-            onPress={() => handleSlotClick(index)}
-            disabled={isAnswerSubmitted || isProcessing}
-          >
-            <Text style={styles.slotText}>{word || "___"}</Text>
-          </TouchableOpacity>
-        ))}
+        {/* Word slots for sentence construction */}
+        <View style={styles.sentenceContainer}>
+          {selectedSlots.map((word, index) => (
+            <TouchableOpacity
+              key={index}
+              style={getSlotStyle(word, index)}
+              onPress={() => handleSlotClick(index)}
+              disabled={isAnswerSubmitted || isProcessing}
+            >
+              <Text style={styles.slotText}>{word || "___"}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Available words to choose from */}
+        <View style={styles.wordsContainer}>
+          {availableWords.map((word: string, index: number) => (
+            <TouchableOpacity
+              key={`${word}-${index}`}
+              style={styles.wordButton}
+              onPress={() => handleWordClick(word, index)}
+              disabled={isAnswerSubmitted || isProcessing}
+            >
+              <Text style={styles.wordText}>{word}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
-
-      {/* Available words to choose from */}
-      <View style={styles.wordsContainer}>
-        {availableWords.map((word: string, index: number) => (
-          <TouchableOpacity
-            key={`${word}-${index}`}
-            style={styles.wordButton}
-            onPress={() => handleWordClick(word, index)}
-            disabled={isAnswerSubmitted || isProcessing}
-          >
-            <Text style={styles.wordText}>{word}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-};
+    );
+  }
+);
 
 // Match Exercise Component - Like web version with left/right columns
 interface MatchExerciseProps extends BaseExerciseProps {
@@ -246,139 +273,163 @@ interface MatchExerciseProps extends BaseExerciseProps {
   onMatchPairs: (pairs: { [key: string]: string }) => void;
 }
 
-export const MatchExercise: React.FC<MatchExerciseProps> = ({
-  exercise,
-  matchedPairs,
-  onMatchPairs,
-  isAnswerSubmitted,
-  isProcessing,
-}) => {
-  const options = exercise.options as MatchOption[];
-  const correctPairs = exercise.correct_answer as MatchOption[];
+export const MatchExercise: React.FC<MatchExerciseProps> = React.memo(
+  ({
+    exercise,
+    matchedPairs,
+    onMatchPairs,
+    isAnswerSubmitted,
+    isProcessing,
+  }) => {
+    const options = exercise.options as MatchOption[];
+    const correctPairs = exercise.correct_answer as MatchOption[];
 
-  const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
-  const [selectedRight, setSelectedRight] = useState<string | null>(null);
+    const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
+    const [selectedRight, setSelectedRight] = useState<string | null>(null);
 
-  const handleLeftClick = (leftText: string) => {
-    if (isAnswerSubmitted || isProcessing) return;
-    if (matchedPairs[leftText]) return; // Already matched
+    const handleLeftClick = React.useCallback(
+      (leftText: string) => {
+        if (isAnswerSubmitted || isProcessing) return;
+        if (matchedPairs[leftText]) return; // Already matched
 
-    setSelectedLeft(leftText);
+        setSelectedLeft((prev) => (prev === leftText ? null : leftText));
 
-    if (selectedRight) {
-      // Make a match
-      const newPairs = { ...matchedPairs, [leftText]: selectedRight };
-      onMatchPairs(newPairs);
-      setSelectedLeft(null);
-      setSelectedRight(null);
-    }
-  };
+        if (selectedRight && leftText !== selectedLeft) {
+          // Make a match - create a new object to avoid read-only issues
+          const newPairs = { ...matchedPairs };
+          newPairs[leftText] = selectedRight;
+          onMatchPairs(newPairs);
+          setSelectedLeft(null);
+          setSelectedRight(null);
+        }
+      },
+      [
+        matchedPairs,
+        selectedRight,
+        selectedLeft,
+        isAnswerSubmitted,
+        isProcessing,
+        onMatchPairs,
+      ]
+    );
 
-  const handleRightClick = (rightText: string) => {
-    if (isAnswerSubmitted || isProcessing) return;
-    if (Object.values(matchedPairs).includes(rightText)) return; // Already matched
+    const handleRightClick = React.useCallback(
+      (rightText: string) => {
+        if (isAnswerSubmitted || isProcessing) return;
+        if (Object.values(matchedPairs).includes(rightText)) return; // Already matched
 
-    setSelectedRight(rightText);
+        setSelectedRight((prev) => (prev === rightText ? null : rightText));
 
-    if (selectedLeft) {
-      // Make a match
-      const newPairs = { ...matchedPairs, [selectedLeft]: rightText };
-      onMatchPairs(newPairs);
-      setSelectedLeft(null);
-      setSelectedRight(null);
-    }
-  };
+        if (selectedLeft && rightText !== selectedRight) {
+          // Make a match - create a new object to avoid read-only issues
+          const newPairs = { ...matchedPairs };
+          newPairs[selectedLeft] = rightText;
+          onMatchPairs(newPairs);
+          setSelectedLeft(null);
+          setSelectedRight(null);
+        }
+      },
+      [
+        matchedPairs,
+        selectedLeft,
+        selectedRight,
+        isAnswerSubmitted,
+        isProcessing,
+        onMatchPairs,
+      ]
+    );
 
-  const getLeftItemStyle = (leftText: string) => {
-    if (matchedPairs[leftText]) {
-      // Check if this is a correct match
-      const isCorrect = correctPairs.some(
-        (pair) =>
-          pair.left === leftText && pair.right === matchedPairs[leftText]
-      );
-
-      if (isAnswerSubmitted) {
-        return [
-          styles.matchItem,
-          isCorrect ? styles.correctMatch : styles.wrongMatch,
-        ];
-      } else {
-        return [styles.matchItem, styles.matchedItem];
-      }
-    } else if (selectedLeft === leftText) {
-      return [styles.matchItem, styles.selectedMatch];
-    }
-
-    return [styles.matchItem];
-  };
-
-  const getRightItemStyle = (rightText: string) => {
-    if (Object.values(matchedPairs).includes(rightText)) {
-      // Find the left item that matches this right item
-      const leftItem = Object.keys(matchedPairs).find(
-        (key) => matchedPairs[key] === rightText
-      );
-      const isCorrect =
-        leftItem &&
-        correctPairs.some(
-          (pair) => pair.left === leftItem && pair.right === rightText
+    const getLeftItemStyle = (leftText: string) => {
+      if (matchedPairs[leftText]) {
+        // Check if this is a correct match
+        const isCorrect = correctPairs.some(
+          (pair) =>
+            pair.left === leftText && pair.right === matchedPairs[leftText]
         );
 
-      if (isAnswerSubmitted) {
-        return [
-          styles.matchItem,
-          isCorrect ? styles.correctMatch : styles.wrongMatch,
-        ];
-      } else {
-        return [styles.matchItem, styles.matchedItem];
+        if (isAnswerSubmitted) {
+          return [
+            styles.matchItem,
+            isCorrect ? styles.correctMatch : styles.wrongMatch,
+          ];
+        } else {
+          return [styles.matchItem, styles.matchedItem];
+        }
+      } else if (selectedLeft === leftText) {
+        return [styles.matchItem, styles.selectedMatch];
       }
-    } else if (selectedRight === rightText) {
-      return [styles.matchItem, styles.selectedMatch];
-    }
 
-    return [styles.matchItem];
-  };
+      return [styles.matchItem];
+    };
 
-  return (
-    <View style={styles.matchContainer}>
-      <Text style={styles.matchInstructions}>
-        Match the items by tapping on them:
-      </Text>
+    const getRightItemStyle = (rightText: string) => {
+      if (Object.values(matchedPairs).includes(rightText)) {
+        // Find the left item that matches this right item
+        const leftItem = Object.keys(matchedPairs).find(
+          (key) => matchedPairs[key] === rightText
+        );
+        const isCorrect =
+          leftItem &&
+          correctPairs.some(
+            (pair) => pair.left === leftItem && pair.right === rightText
+          );
 
-      <View style={styles.matchColumnsContainer}>
-        {/* Left column */}
-        <View style={styles.matchColumn}>
-          {options.map((option: MatchOption) => (
-            <TouchableOpacity
-              key={`left-${option.id}`}
-              style={getLeftItemStyle(option.left)}
-              onPress={() => handleLeftClick(option.left)}
-              disabled={isAnswerSubmitted || isProcessing}
-            >
-              <Text style={styles.matchText}>{option.left}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        if (isAnswerSubmitted) {
+          return [
+            styles.matchItem,
+            isCorrect ? styles.correctMatch : styles.wrongMatch,
+          ];
+        } else {
+          return [styles.matchItem, styles.matchedItem];
+        }
+      } else if (selectedRight === rightText) {
+        return [styles.matchItem, styles.selectedMatch];
+      }
 
-        {/* Right column - shuffled */}
-        <View style={styles.matchColumn}>
-          {options
-            .sort(() => Math.random() - 0.5) // Shuffle the right side
-            .map((option: MatchOption) => (
+      return [styles.matchItem];
+    };
+
+    return (
+      <View style={styles.matchContainer}>
+        <Text style={styles.matchInstructions}>
+          Match the items by tapping on them:
+        </Text>
+
+        <View style={styles.matchColumnsContainer}>
+          {/* Left column */}
+          <View style={styles.matchColumn}>
+            {options.map((option: MatchOption) => (
               <TouchableOpacity
-                key={`right-${option.id}`}
-                style={getRightItemStyle(option.right)}
-                onPress={() => handleRightClick(option.right)}
+                key={`left-${option.id}`}
+                style={getLeftItemStyle(option.left)}
+                onPress={() => handleLeftClick(option.left)}
                 disabled={isAnswerSubmitted || isProcessing}
               >
-                <Text style={styles.matchText}>{option.right}</Text>
+                <Text style={styles.matchText}>{option.left}</Text>
               </TouchableOpacity>
             ))}
+          </View>
+
+          {/* Right column - shuffled */}
+          <View style={styles.matchColumn}>
+            {[...options]
+              .sort(() => Math.random() - 0.5) // Shuffle the right side
+              .map((option: MatchOption) => (
+                <TouchableOpacity
+                  key={`right-${option.id}`}
+                  style={getRightItemStyle(option.right)}
+                  onPress={() => handleRightClick(option.right)}
+                  disabled={isAnswerSubmitted || isProcessing}
+                >
+                  <Text style={styles.matchText}>{option.right}</Text>
+                </TouchableOpacity>
+              ))}
+          </View>
         </View>
       </View>
-    </View>
-  );
-};
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   optionsContainer: {
