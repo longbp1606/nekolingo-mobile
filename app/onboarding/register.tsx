@@ -3,9 +3,17 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
 import { BackButton, Button } from "../../components";
+import { AppDispatch } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
-import { useAuth } from "../../hooks/useAuth";
+import { useOnboardingCheck } from "../../hooks/useOnboardingCheck";
+import {
+  useLoginMutation,
+  useSetupRegisterMutation,
+} from "../../services/auth/authApiService";
+import { storeAuthData } from "../../services/auth/authSlice";
+import { Language } from "../../services/languageApiService";
 
 export default function OnboardingRegisterScreen() {
   const [email, setEmail] = useState("");
@@ -15,7 +23,13 @@ export default function OnboardingRegisterScreen() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const router = useRouter();
-  const { register, isLoading: loading, error } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const { completeOnboarding } = useOnboardingCheck();
+  const [setupRegister, { isLoading: registerLoading }] =
+    useSetupRegisterMutation();
+  const [login, { isLoading: loginLoading }] = useLoginMutation();
+
+  const loading = registerLoading || loginLoading;
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -63,38 +77,48 @@ export default function OnboardingRegisterScreen() {
     }
 
     try {
-      // Get onboarding data from AsyncStorage
-      const selectedLanguage =
-        (await AsyncStorage.getItem("selectedLanguage")) || "en";
-      const selectedLevel =
-        (await AsyncStorage.getItem("selectedLevel")) || "1";
+      // Get selected language from AsyncStorage
+      const storedLanguageStr = await AsyncStorage.getItem("selectedLanguage");
 
-      // Default languages - can be customized based on requirements
-      const profile_language = "vi"; // Default to Vietnamese
-      const learning_language = selectedLanguage;
-
-      // Validate that a target language is selected
-      if (!learning_language || learning_language === profile_language) {
-        setValidationError(
-          "Please select a language to learn that is different from your native language"
-        );
+      if (!storedLanguageStr) {
+        setValidationError("Please select a language to learn first");
         return;
       }
 
-      const result = await register({
+      const selectedLanguage: Language = JSON.parse(storedLanguageStr);
+
+      // Step 1: Call setup-register API to create the account
+      await setupRegister({
         email,
         password,
         username: username || email.split("@")[0], // Use email prefix if no username
-        full_name: username || email.split("@")[0],
-        profile_language,
-        learning_language,
-      });
+        language_from: "vi", // Vietnamese (source language)
+        language_to: selectedLanguage.code, // Target language
+        current_level: 0, // Beginner level
+      }).unwrap();
 
-      // Navigate to home on success
+      // Step 2: Login to get the auth tokens
+      const loginResult = await login({
+        email,
+        password,
+      }).unwrap();
+
+      // Step 3: Store authentication data
+      await dispatch(storeAuthData(loginResult.data));
+
+      // Step 4: Mark onboarding as completed
+      await completeOnboarding();
+
+      // Step 5: Clear the stored language data since it's now saved in the user profile
+      await AsyncStorage.removeItem("selectedLanguage");
+
+      // Step 6: Navigate to home
       router.push("/(tabs)/home" as any);
-    } catch (error) {
+    } catch (error: any) {
       console.log("Registration failed", error);
-      setValidationError("Registration failed. Please try again.");
+      const errorMessage =
+        error?.data?.message || "Registration failed. Please try again.";
+      setValidationError(errorMessage);
     }
   };
 
@@ -111,10 +135,8 @@ export default function OnboardingRegisterScreen() {
         </View>
 
         <View style={styles.formContainer}>
-          {(error || validationError) && (
-            <Text style={styles.errorText}>
-              {validationError || (error ? "Registration failed" : "")}
-            </Text>
+          {validationError && (
+            <Text style={styles.errorText}>{validationError}</Text>
           )}
 
           <View style={styles.inputContainer}>

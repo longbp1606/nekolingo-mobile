@@ -18,6 +18,13 @@ export const languageApi = apiSlice.injectEndpoints({
       transformResponse: (response: { languages: Language[] }) =>
         response.languages,
     }),
+    getLanguagesForOnboarding: builder.query<Language[], void>({
+      query: () => "/language",
+      providesTags: ["Language"],
+      transformResponse: (response: { languages: Language[] }) =>
+        // Filter out Vietnamese since the app is for Vietnamese users learning other languages
+        response.languages.filter((lang) => lang.code !== "vi"),
+    }),
     getLanguageById: builder.query<Language, string>({
       query: (id) => `/language/${id}`,
       providesTags: (result, error, id) => [{ type: "Language", id }],
@@ -25,4 +32,8 @@ export const languageApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetLanguagesQuery, useGetLanguageByIdQuery } = languageApi;
+export const {
+  useGetLanguagesQuery,
+  useGetLanguagesForOnboardingQuery,
+  useGetLanguageByIdQuery,
+} = languageApi;

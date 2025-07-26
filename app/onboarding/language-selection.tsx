@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,10 +13,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { useGetLanguagesQuery } from "../../services/languageApiService";
+import {
+  Language,
+  useGetLanguagesForOnboardingQuery,
+} from "../../services/languageApiService";
 
 export default function LanguageSelectionScreen() {
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(
+    null
+  );
   const router = useRouter();
 
   const {
@@ -23,46 +29,54 @@ export default function LanguageSelectionScreen() {
     isLoading: loading,
     error,
     refetch,
-  } = useGetLanguagesQuery();
+  } = useGetLanguagesForOnboardingQuery();
 
-  const handleLanguageSelect = (language: any) => {
-    setSelectedLanguage(language.code);
+  const handleLanguageSelect = (language: Language) => {
+    setSelectedLanguage(language);
   };
 
   const handleContinue = async () => {
     if (selectedLanguage) {
       try {
-        // Store the selected language
-        await AsyncStorage.setItem("selectedLanguage", selectedLanguage);
+        // Store the complete selected language object
+        await AsyncStorage.setItem(
+          "selectedLanguage",
+          JSON.stringify(selectedLanguage)
+        );
 
-        // Navigate to source selection
-        router.push("/onboarding/source-selection" as any);
+        // Navigate to register screen directly (simplified onboarding)
+        router.push("/onboarding/register" as any);
       } catch (error) {
         console.error("Error saving language:", error);
       }
     }
   };
 
-  const renderLanguageItem = ({ item }: { item: any }) => (
+  const renderLanguageItem = ({ item }: { item: Language }) => (
     <TouchableOpacity
       style={[
         styles.languageItem,
-        selectedLanguage === item.code && styles.selectedLanguageItem,
+        selectedLanguage?._id === item._id && styles.selectedLanguageItem,
       ]}
       onPress={() => handleLanguageSelect(item)}
     >
-      <Text style={styles.languageFlag}>{item.flag || "🌐"}</Text>
+      {item.flag_url ? (
+        <Image
+          source={{ uri: item.flag_url }}
+          style={styles.languageFlagImage}
+          resizeMode="contain"
+        />
+      ) : (
+        <Text style={styles.languageFlag}>🌐</Text>
+      )}
       <Text
         style={[
           styles.languageName,
-          selectedLanguage === item.code && styles.selectedLanguageName,
+          selectedLanguage?._id === item._id && styles.selectedLanguageName,
         ]}
       >
         {item.name}
       </Text>
-      {item.native_name && item.native_name !== item.name && (
-        <Text style={styles.nativeName}>({item.native_name})</Text>
-      )}
     </TouchableOpacity>
   );
 
@@ -165,6 +179,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginRight: Sizes.md,
   },
+  languageFlagImage: {
+    width: 28,
+    height: 20,
+    marginRight: Sizes.md,
+  },
   languageName: {
     fontSize: Sizes.h4,
     fontWeight: "600",
@@ -174,12 +193,6 @@ const styles = StyleSheet.create({
   selectedLanguageName: {
     color: Colors.primary,
     fontWeight: "bold",
-  },
-  nativeName: {
-    fontSize: Sizes.caption,
-    color: Colors.textLight,
-    fontStyle: "italic",
-    marginLeft: Sizes.xs,
   },
   loadingContainer: {
     flex: 1,

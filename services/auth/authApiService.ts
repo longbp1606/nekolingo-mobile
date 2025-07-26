@@ -33,6 +33,15 @@ export interface RegisterRequest {
   learning_language: string;
 }
 
+export interface SetupRegisterRequest {
+  email: string;
+  password: string;
+  username?: string;
+  language_from: string;
+  language_to: string;
+  current_level: number;
+}
+
 export interface AuthData {
   accessToken: string;
   refreshToken: string;
@@ -69,6 +78,14 @@ export const authApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    setupRegister: builder.mutation<AuthResponse, SetupRegisterRequest>({
+      query: (userData) => ({
+        url: "/auth/setup-register",
+        method: "POST",
+        body: userData,
+      }),
+      invalidatesTags: ["User"],
+    }),
     validateToken: builder.query<{ valid: boolean; user: User }, string>({
       query: (token) => ({
         url: "/auth/validate",
@@ -96,6 +113,7 @@ export const authApi = apiSlice.injectEndpoints({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useSetupRegisterMutation,
   useValidateTokenQuery,
   useGetProfileQuery,
   useUpdateProfileMutation,

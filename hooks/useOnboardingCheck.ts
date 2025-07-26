@@ -31,9 +31,19 @@ export const useOnboardingCheck = () => {
     }
   };
 
+  const resetOnboarding = async () => {
+    try {
+      await AsyncStorage.removeItem("onboarding_completed");
+      setIsCompleted(false);
+    } catch (error) {
+      console.error("Error resetting onboarding status:", error);
+    }
+  };
+
   return {
     isCompleted,
     isLoaded,
     completeOnboarding,
+    resetOnboarding,
   };
 };
