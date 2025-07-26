@@ -149,11 +149,15 @@ export default function ExerciseScreen() {
         case "fill_in_blank":
         case "listening":
         case "image_select":
-          return selectedAnswer !== null;
+          return selectedAnswer !== null && selectedAnswer.trim() !== "";
         case "reorder":
-          return reorderedWords.length > 0;
+          return (
+            reorderedWords.length > 0 &&
+            reorderedWords.every((word) => word.trim() !== "")
+          );
         case "match":
-          return Object.keys(matchedPairs).length > 0;
+          const options = currentExercise.options as MatchOption[];
+          return Object.keys(matchedPairs).length === options.length;
         default:
           return selectedAnswer !== null;
       }
@@ -438,11 +442,63 @@ export default function ExerciseScreen() {
             <Button
               title="Submit"
               onPress={handleSubmitAnswer}
-              disabled={!selectedAnswer || isProcessing}
+              disabled={(() => {
+                switch (currentExercise?.question_format) {
+                  case "multiple_choice":
+                  case "fill_in_blank":
+                  case "listening":
+                  case "image_select":
+                    return !selectedAnswer || isProcessing;
+                  case "reorder":
+                    return (
+                      reorderedWords.length === 0 ||
+                      reorderedWords.some((word) => !word.trim()) ||
+                      isProcessing
+                    );
+                  case "match":
+                    const options = currentExercise.options as MatchOption[];
+                    return (
+                      Object.keys(matchedPairs).length < options.length ||
+                      isProcessing
+                    );
+                  default:
+                    return !selectedAnswer || isProcessing;
+                }
+              })()}
               style={[
                 styles.submitButton,
-                (!selectedAnswer || isProcessing) && styles.disabledButton,
-              ]}
+                (() => {
+                  switch (currentExercise?.question_format) {
+                    case "multiple_choice":
+                    case "fill_in_blank":
+                    case "listening":
+                    case "image_select":
+                      return (
+                        (!selectedAnswer || isProcessing) &&
+                        styles.disabledButton
+                      );
+                    case "reorder":
+                      return (
+                        (reorderedWords.length === 0 ||
+                          reorderedWords.some((word) => !word.trim()) ||
+                          isProcessing) &&
+                        styles.disabledButton
+                      );
+                    case "match":
+                      const options = currentExercise.options as MatchOption[];
+                      return (
+                        (Object.keys(matchedPairs).length < options.length ||
+                          isProcessing) &&
+                        styles.disabledButton
+                      );
+                    default:
+                      return (
+                        (!selectedAnswer || isProcessing) &&
+                        styles.disabledButton
+                      );
+                  }
+                })(),
+              ].filter(Boolean)}
             />
           ) : (
             <Button

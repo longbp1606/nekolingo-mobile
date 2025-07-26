@@ -83,19 +83,19 @@ export const ImageOptionsExercise: React.FC<BaseExerciseProps> = ({
     const isSelected = selectedAnswer === option.value;
     const isCorrectAnswer = option.value === correctAnswer;
 
+    let style = [styles.imageOption];
+
     if (isAnswerSubmitted) {
       if (isCorrectAnswer) {
-        return [styles.imageOption, styles.correctImageOption];
+        style.push(styles.correctImageOption);
       } else if (isSelected && !isCorrectAnswer) {
-        return [styles.imageOption, styles.wrongImageOption];
-      } else {
-        return [styles.imageOption];
+        style.push(styles.wrongImageOption);
       }
     } else if (isSelected) {
-      return [styles.imageOption, styles.selectedImageOption];
+      style.push(styles.selectedImageOption);
     }
 
-    return [styles.imageOption];
+    return style;
   };
 
   return (
@@ -191,16 +191,18 @@ export const ReorderExercise: React.FC<ReorderExerciseProps> = ({
   };
 
   const getSlotStyle = (word: string, index: number) => {
+    let style = [styles.wordSlot];
+
     if (isAnswerSubmitted) {
       const isCorrectWord = correctWords[index] === word;
       if (isCorrectWord) {
-        return [styles.wordSlot, styles.correctSlot];
+        style.push(styles.correctSlot);
       } else if (word) {
-        return [styles.wordSlot, styles.wrongSlot];
+        style.push(styles.wrongSlot);
       }
     }
 
-    return [styles.wordSlot];
+    return style;
   };
 
   return (
@@ -290,6 +292,8 @@ export const MatchExercise: React.FC<MatchExerciseProps> = ({
   };
 
   const getLeftItemStyle = (leftText: string) => {
+    let style = [styles.matchItem];
+
     if (matchedPairs[leftText]) {
       // Check if this is a correct match
       const isCorrect = correctPairs.some(
@@ -298,21 +302,20 @@ export const MatchExercise: React.FC<MatchExerciseProps> = ({
       );
 
       if (isAnswerSubmitted) {
-        return [
-          styles.matchItem,
-          isCorrect ? styles.correctMatch : styles.wrongMatch,
-        ];
+        style.push(isCorrect ? styles.correctMatch : styles.wrongMatch);
       } else {
-        return [styles.matchItem, styles.matchedItem];
+        style.push(styles.matchedItem);
       }
     } else if (selectedLeft === leftText) {
-      return [styles.matchItem, styles.selectedMatch];
+      style.push(styles.selectedMatch);
     }
 
-    return [styles.matchItem];
+    return style;
   };
 
   const getRightItemStyle = (rightText: string) => {
+    let style = [styles.matchItem];
+
     if (Object.values(matchedPairs).includes(rightText)) {
       // Find the left item that matches this right item
       const leftItem = Object.keys(matchedPairs).find(
@@ -325,18 +328,15 @@ export const MatchExercise: React.FC<MatchExerciseProps> = ({
         );
 
       if (isAnswerSubmitted) {
-        return [
-          styles.matchItem,
-          isCorrect ? styles.correctMatch : styles.wrongMatch,
-        ];
+        style.push(isCorrect ? styles.correctMatch : styles.wrongMatch);
       } else {
-        return [styles.matchItem, styles.matchedItem];
+        style.push(styles.matchedItem);
       }
     } else if (selectedRight === rightText) {
-      return [styles.matchItem, styles.selectedMatch];
+      style.push(styles.selectedMatch);
     }
 
-    return [styles.matchItem];
+    return style;
   };
 
   return (
