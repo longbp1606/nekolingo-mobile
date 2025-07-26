@@ -250,6 +250,8 @@ const HomeScreen: React.FC = () => {
         subtitle={currentUnit.subtitle}
         backgroundColor={getUnitColor(currentUnit.id)}
         onListPress={() => router.push("/lessons")}
+        userLevel={user?.currentLevel}
+        userName={user?.username}
       />
 
       <UnitsScrollView

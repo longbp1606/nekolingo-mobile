@@ -1,22 +1,38 @@
 import { apiSlice } from "../apiSlice";
 
 export interface User {
-  _id: string;
-  username: string;
+  id: string;
   email: string;
-  full_name: string;
+  username: string;
+  role: number;
+  currentLevel: number;
+  xp: number;
+  weeklyXp: number;
+  hearts: number;
+  streakDays: number;
+  freezeCount: number;
+  isFreeze: boolean;
+  languageFrom: string;
+  languageTo: string;
+  isPremiere: boolean;
+  balance: number;
+  isActive: boolean;
+  currentCourse: string;
+  currentTopic: string;
+  currentLesson: string;
+  createdAt: string;
+  // Legacy fields for backward compatibility
+  _id?: string;
+  full_name?: string;
   avatar_url?: string;
-  current_streak: number;
-  longest_streak: number;
-  total_xp: number;
-  level: number;
-  profile_language: string;
-  learning_language: string;
-  currentCourse?: string;
-  currentLesson?: string;
-  currentTopic?: string;
-  created_at: string;
-  updated_at: string;
+  current_streak?: number;
+  longest_streak?: number;
+  total_xp?: number;
+  level?: number;
+  profile_language?: string;
+  learning_language?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface LoginRequest {

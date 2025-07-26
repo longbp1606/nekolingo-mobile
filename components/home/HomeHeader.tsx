@@ -7,6 +7,8 @@ interface HeaderProps {
   subtitle: string;
   backgroundColor: string;
   onListPress: () => void;
+  userLevel?: number;
+  userName?: string;
 }
 
 export const HomeHeader: React.FC<HeaderProps> = ({
@@ -14,11 +16,16 @@ export const HomeHeader: React.FC<HeaderProps> = ({
   subtitle,
   backgroundColor,
   onListPress,
+  userLevel,
+  userName,
 }) => {
   return (
     <View style={[styles.header, { backgroundColor }]}>
-      <Text style={styles.headerTitle}>{title}</Text>
-      <Text style={styles.headerSubtitle}>{subtitle}</Text>
+      <View style={styles.headerContent}>
+        <Text style={styles.headerTitle}>{title}</Text>
+        <Text style={styles.headerSubtitle}>{subtitle}</Text>
+        {userLevel && <Text style={styles.userLevel}>Level {userLevel}</Text>}
+      </View>
       <TouchableOpacity style={styles.bookmarkButton} onPress={onListPress}>
         <Ionicons name="list" size={24} color="white" />
       </TouchableOpacity>
@@ -33,6 +40,9 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     position: "relative",
   },
+  headerContent: {
+    flex: 1,
+  },
   headerTitle: {
     color: "white",
     fontSize: 24,
@@ -43,6 +53,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 4,
     opacity: 0.9,
+  },
+  userLevel: {
+    color: "white",
+    fontSize: 14,
+    marginTop: 2,
+    opacity: 0.8,
+    fontWeight: "600",
   },
   bookmarkButton: {
     position: "absolute",
