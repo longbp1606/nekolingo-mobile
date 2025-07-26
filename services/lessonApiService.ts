@@ -1,17 +1,48 @@
 import { apiSlice } from "./apiSlice";
 
+export interface ImageOption {
+  image: string;
+  value: string;
+}
+
+export interface MatchOption {
+  id: string;
+  left: string;
+  right: string;
+}
+
 export interface Exercise {
   _id: string;
-  lesson_id: string;
+  lesson_id?: string;
+  question_format:
+    | "fill_in_blank"
+    | "multiple_choice"
+    | "reorder"
+    | "image_select"
+    | "listening"
+    | "match";
   type: string;
   question: string;
-  options?: string[];
-  correct_answer: string | string[];
+  options?: string[] | ImageOption[] | MatchOption[];
+  correct_answer: string | string[] | MatchOption[];
   explanation?: string;
-  order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  audio_url?: string;
+  lesson?: {
+    _id: string;
+    title: string;
+  };
+  grammar?: {
+    _id: string;
+    name: string;
+  };
+  vocabulary?: {
+    _id: string;
+    word: string;
+  };
 }
 
 export interface Lesson {
