@@ -347,14 +347,11 @@ export const MatchExercise: React.FC<MatchExerciseProps> = React.memo(
             pair.left === leftText && pair.right === matchedPairs[leftText]
         );
 
-        if (isAnswerSubmitted) {
-          return [
-            styles.matchItem,
-            isCorrect ? styles.correctMatch : styles.wrongMatch,
-          ];
-        } else {
-          return [styles.matchItem, styles.matchedItem];
-        }
+        // Show immediate feedback - no need to wait for submission
+        return [
+          styles.matchItem,
+          isCorrect ? styles.correctMatch : styles.wrongMatch,
+        ];
       } else if (selectedLeft === leftText) {
         return [styles.matchItem, styles.selectedMatch];
       }
@@ -374,14 +371,11 @@ export const MatchExercise: React.FC<MatchExerciseProps> = React.memo(
             (pair) => pair.left === leftItem && pair.right === rightText
           );
 
-        if (isAnswerSubmitted) {
-          return [
-            styles.matchItem,
-            isCorrect ? styles.correctMatch : styles.wrongMatch,
-          ];
-        } else {
-          return [styles.matchItem, styles.matchedItem];
-        }
+        // Show immediate feedback - no need to wait for submission
+        return [
+          styles.matchItem,
+          isCorrect ? styles.correctMatch : styles.wrongMatch,
+        ];
       } else if (selectedRight === rightText) {
         return [styles.matchItem, styles.selectedMatch];
       }
@@ -398,32 +392,86 @@ export const MatchExercise: React.FC<MatchExerciseProps> = React.memo(
         <View style={styles.matchColumnsContainer}>
           {/* Left column */}
           <View style={styles.matchColumn}>
-            {options.map((option: MatchOption) => (
-              <TouchableOpacity
-                key={`left-${option.id}`}
-                style={getLeftItemStyle(option.left)}
-                onPress={() => handleLeftClick(option.left)}
-                disabled={isAnswerSubmitted || isProcessing}
-              >
-                <Text style={styles.matchText}>{option.left}</Text>
-              </TouchableOpacity>
-            ))}
+            {options.map((option: MatchOption) => {
+              const isMatched = matchedPairs[option.left];
+              const isCorrect =
+                isMatched &&
+                correctPairs.some(
+                  (pair) =>
+                    pair.left === option.left &&
+                    pair.right === matchedPairs[option.left]
+                );
+
+              return (
+                <TouchableOpacity
+                  key={`left-${option.id}`}
+                  style={getLeftItemStyle(option.left)}
+                  onPress={() => handleLeftClick(option.left)}
+                  disabled={isAnswerSubmitted || isProcessing}
+                >
+                  <View style={styles.matchItemContent}>
+                    <Text style={styles.matchText}>{option.left}</Text>
+                    {isMatched && (
+                      <Text
+                        style={[
+                          styles.matchIndicator,
+                          isCorrect
+                            ? styles.correctIndicator
+                            : styles.wrongIndicator,
+                        ]}
+                      >
+                        {isCorrect ? "✓" : "✗"}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Right column - shuffled */}
           <View style={styles.matchColumn}>
             {[...options]
               .sort(() => Math.random() - 0.5) // Shuffle the right side
-              .map((option: MatchOption) => (
-                <TouchableOpacity
-                  key={`right-${option.id}`}
-                  style={getRightItemStyle(option.right)}
-                  onPress={() => handleRightClick(option.right)}
-                  disabled={isAnswerSubmitted || isProcessing}
-                >
-                  <Text style={styles.matchText}>{option.right}</Text>
-                </TouchableOpacity>
-              ))}
+              .map((option: MatchOption) => {
+                const isMatched = Object.values(matchedPairs).includes(
+                  option.right
+                );
+                const leftItem = Object.keys(matchedPairs).find(
+                  (key) => matchedPairs[key] === option.right
+                );
+                const isCorrect =
+                  leftItem &&
+                  correctPairs.some(
+                    (pair) =>
+                      pair.left === leftItem && pair.right === option.right
+                  );
+
+                return (
+                  <TouchableOpacity
+                    key={`right-${option.id}`}
+                    style={getRightItemStyle(option.right)}
+                    onPress={() => handleRightClick(option.right)}
+                    disabled={isAnswerSubmitted || isProcessing}
+                  >
+                    <View style={styles.matchItemContent}>
+                      <Text style={styles.matchText}>{option.right}</Text>
+                      {isMatched && (
+                        <Text
+                          style={[
+                            styles.matchIndicator,
+                            isCorrect
+                              ? styles.correctIndicator
+                              : styles.wrongIndicator,
+                          ]}
+                        >
+                          {isCorrect ? "✓" : "✗"}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
           </View>
         </View>
       </View>
@@ -591,15 +639,50 @@ const styles = StyleSheet.create({
   },
   correctMatch: {
     borderColor: Colors.success,
-    backgroundColor: Colors.success + "10",
+    backgroundColor: Colors.success + "15",
+    borderWidth: 3,
+    shadowColor: Colors.success,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   wrongMatch: {
     borderColor: Colors.error,
-    backgroundColor: Colors.error + "10",
+    backgroundColor: Colors.error + "15",
+    borderWidth: 3,
+    shadowColor: Colors.error,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   matchText: {
     fontSize: Sizes.body,
     color: Colors.text,
     textAlign: "center",
+  },
+  matchItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  matchIndicator: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: Sizes.xs,
+  },
+  correctIndicator: {
+    color: Colors.success,
+  },
+  wrongIndicator: {
+    color: Colors.error,
   },
 });
