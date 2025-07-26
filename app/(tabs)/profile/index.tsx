@@ -71,7 +71,7 @@ const getLeague = (xp: number): string => {
 };
 
 interface ProfileScreenProps {
-  navigation?: any; 
+  navigation?: any;
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
@@ -183,7 +183,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const handleRefresh = async (): Promise<void> => {
     setRefreshing(true);
-    await loadUserProfile(true); 
+    await loadUserProfile(true);
     setRefreshing(false);
   };
 
@@ -219,7 +219,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       {
         icon: require("../../../assets/images/trophy.png"),
         label: "Số dấu đạt top 3",
-        value: "0", 
+        value: "0",
         className: "trophy",
       },
     ];
@@ -417,7 +417,21 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       {renderStatsCard()}
       {renderFollowCard()}
       {renderAddFriendsCard()}
-      <AchievementList limit={3} showViewAll={true} />
+      {userProfile && userProfile.user && (userProfile.user.id || userProfile.user._id) && (
+        <AchievementList
+          userId={userProfile.user.id || userProfile.user._id}
+          userStats={{
+            xp: userProfile.user.xp || 0,
+            completed_lessons: 0, 
+            completed_courses: 0, 
+            has_practiced: (userProfile.user.xp || 0) > 0,
+            streak_days: userProfile.user.streak_days || userProfile.user.streak || 0,
+            perfect_lessons: 0, 
+          }}
+          limit={3}
+          showViewAll={true}
+        />
+      )}
 
       {showPopup && (
         <PopupInvite visible={showPopup} onClose={() => setShowPopup(false)} />

@@ -87,7 +87,7 @@ export function QuestMission({
   };
 
   const renderLockIcons = () => {
-    if (total <= 10) {
+    if (total <= 10 || total < 30 || total > 50) {
       return null;
     }
 
