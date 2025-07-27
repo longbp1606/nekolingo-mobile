@@ -1,15 +1,20 @@
 export interface QuestReward {
-    type: 'xp' | 'gem' | 'heart';
+    type: 'xp' | 'gem' | 'heart' | 'freeze';
     amount: number;
 }
+
+export type QuestType = 'XP' | 'Complete' | 'Time' | 'Streak' | 'Result';
 
 export interface QuestDetail {
     _id: string;
     title: string;
     icon: string;
-    type: 'XP' | 'Complete' | 'Time' | 'Streak';
+    type: QuestType;
     condition: number;
     reward: QuestReward;
+    score?: number; 
+    progress?: number;
+    progress_text?: string;
 }
 
 export interface UserQuest {
@@ -39,7 +44,8 @@ export interface FormattedQuest {
     icon: string;
     isCompleted: boolean;
     reward: QuestReward;
-    type: string;
+    type: QuestType;
+    score?: number; 
 }
 
 export interface QuestCompletionResponse {
