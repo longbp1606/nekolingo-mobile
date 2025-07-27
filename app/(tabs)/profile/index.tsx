@@ -56,11 +56,10 @@ const formatJoinDate = (dateString: string | undefined): string => {
 };
 
 const getLeague = (xp: number): string => {
-  if (xp < 100) return "Đồng";
-  if (xp < 300) return "Bạc";
-  if (xp < 600) return "Vàng";
-  if (xp < 1000) return "Bạch Kim";
-  return "Kim Cương";
+  if (xp < 500) return 'Đồng';
+  if (xp < 1999) return 'Bạc';
+  if (xp < 9999) return 'Vàng';
+  return 'Kim Cương';
 };
 
 const ProfileScreen: React.FC = () => {
@@ -75,7 +74,6 @@ const ProfileScreen: React.FC = () => {
 
   const handleRefresh = async (): Promise<void> => {
     setRefreshing(true);
-    // TODO: Add profile refresh logic here if needed
     setTimeout(() => setRefreshing(false), 1000);
   };
 
@@ -91,9 +89,21 @@ const ProfileScreen: React.FC = () => {
   };
 
   const getStatsFromUser = (userData: User): StatItem[] => {
-    const streak = userData.streakDays || userData.current_streak || 0;
-    const xp = userData.xp || userData.total_xp || 0;
-    const weeklyXp = userData.weeklyXp || 0;
+    const streak = (userData as any).streak_days || userData.streakDays || userData.current_streak || 0;
+    const totalXp = userData.xp || userData.total_xp || 0;
+    const currentLevel = (userData as any).current_level || userData.currentLevel || userData.level || 1;
+
+    console.log("User data debug:", {
+      raw_user: userData,
+      streak_days: (userData as any).streak_days,
+      streakDays: userData.streakDays,
+      current_level: (userData as any).current_level,
+      currentLevel: userData.currentLevel,
+      xp: userData.xp,
+      calculated_streak: streak,
+      calculated_level: currentLevel,
+      calculated_xp: totalXp
+    });
 
     return [
       {
@@ -105,22 +115,29 @@ const ProfileScreen: React.FC = () => {
       {
         icon: require("../../../assets/images/lightning.png"),
         label: "Tổng điểm XP",
-        value: xp.toString(),
+        value: totalXp.toString(),
         className: "lightning",
       },
       {
         icon: require("../../../assets/images/winner.png"),
         label: "Giải đấu hiện tại",
-        value: getLeague(weeklyXp || xp),
+        value: getLeague(totalXp),
         className: "bronze",
       },
       {
         icon: require("../../../assets/images/trophy.png"),
         label: "Cấp độ hiện tại",
-        value: (userData.currentLevel || userData.level || 1).toString(),
+        value: currentLevel.toString(),
         className: "trophy",
       },
     ];
+  };
+
+  const getLeague = (xp: number): string => {
+    if (xp < 500) return 'Đồng';
+    if (xp < 1999) return 'Bạc';
+    if (xp < 9999) return 'Vàng';
+    return 'Kim Cương';
   };
 
   const renderProfileHeader = (): ReactElement | null => {
@@ -131,7 +148,7 @@ const ProfileScreen: React.FC = () => {
       user.username ||
       user.email?.split("@")[0] ||
       "Người dùng";
-    const handle = `@${user.username || user.email?.split("@")[0] || "user"}`;
+    const handle = `@${user.email || user.email?.split("@")[0] || "user"}`;
 
     return (
       <View style={styles.profileHeader}>

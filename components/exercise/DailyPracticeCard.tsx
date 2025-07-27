@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 interface DailyPracticeCardProps {
   title: string;
@@ -27,9 +27,9 @@ export function DailyPracticeCard({
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
 
-          <TouchableOpacity style={styles.unlockButton} onPress={onUnlock}>
+          {/* <TouchableOpacity style={styles.unlockButton} onPress={onUnlock}>
             <Text style={styles.unlockButtonText}>MỞ KHOÁ</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {character && (

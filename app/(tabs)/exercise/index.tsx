@@ -29,7 +29,7 @@ export default function ExerciseScreen() {
         </View>
 
         <View style={styles.content}>
-          <PracticeSection title="Luyện giao tiếp" badge="SUPER">
+          {/* <PracticeSection title="Luyện giao tiếp" badge="SUPER">
             <PracticeItem
               title="Luyện nói"
               iconSource={require("../../../assets/images/talking.png")}
@@ -40,7 +40,7 @@ export default function ExerciseScreen() {
               iconSource={require("../../../assets/images/woman.png")}
               onPress={() => handlePracticeItemPress("listening")}
             />
-          </PracticeSection>
+          </PracticeSection> */}
 
           <PracticeSection title="Góc học tập">
             <PracticeItem

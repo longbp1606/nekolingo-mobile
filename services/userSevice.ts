@@ -55,18 +55,72 @@ export const userService = {
         );
         const detailResponse = await response.json();
 
+        console.log("[getUserProfile] Detail response from API:", detailResponse);
+        console.log("[getUserProfile] User data from API:", detailResponse.data?.user);
+
+        // The key fix: properly map snake_case API fields to camelCase
+        const apiUserData = detailResponse.data?.user || {};
+
         const combinedUserData = {
           user: {
-            ...detailResponse.data.user,
+            // Start with profile data
+            id: userProfile.id,
             name: userProfile.name,
             username: userProfile.username,
+            email: userProfile.email || apiUserData.email,
             selectedLanguage: userProfile.selectedLanguage,
-            streak: detailResponse.data.user.streak_days || userProfile.streak,
-            level: detailResponse.data.user.current_level || userProfile.level,
+
+            // Map the important fields from API response (snake_case to camelCase)
+            streakDays: apiUserData.streak_days || userProfile.streak || 0,
+            currentLevel: apiUserData.current_level || userProfile.level || 1,
+            xp: apiUserData.xp || userProfile.xp || 0,
+            weeklyXp: apiUserData.weekly_xp || 0,
+            hearts: apiUserData.hearts || 5,
+
+            // Keep the snake_case versions as well for compatibility
+            streak_days: apiUserData.streak_days || userProfile.streak || 0,
+            current_level: apiUserData.current_level || userProfile.level || 1,
+            weekly_xp: apiUserData.weekly_xp || 0,
+
+            // Other fields
+            freezeCount: apiUserData.freeze_count || 0,
+            freeze_count: apiUserData.freeze_count || 0,
+            isFreeze: apiUserData.is_freeze || false,
+            is_freeze: apiUserData.is_freeze || false,
+
+            languageFrom: apiUserData.language_from || "",
+            language_from: apiUserData.language_from || "",
+            languageTo: apiUserData.language_to || "",
+            language_to: apiUserData.language_to || "",
+
+            isPremiere: apiUserData.is_premiere || false,
+            is_premiere: apiUserData.is_premiere || false,
+            balance: apiUserData.balance || 0,
+            isActive: apiUserData.is_active !== false,
+            is_active: apiUserData.is_active !== false,
+            role: apiUserData.role || 0,
+
+            // Course/lesson data
+            currentCourse: apiUserData.current_course,
+            current_course: apiUserData.current_course,
+            currentTopic: apiUserData.current_topic,
+            current_topic: apiUserData.current_topic,
+            currentLesson: apiUserData.current_lesson,
+            current_lesson: apiUserData.current_lesson,
+
+            // Dates
+            createdAt: apiUserData.createdAt || apiUserData.created_at,
+            created_at: apiUserData.createdAt || apiUserData.created_at,
+            updatedAt: apiUserData.updatedAt || apiUserData.updated_at,
+            updated_at: apiUserData.updatedAt || apiUserData.updated_at,
+
+            // Include all other fields from API response
+            ...apiUserData,
           },
           ...detailResponse.data,
         };
 
+        console.log("[getUserProfile] Combined user data:", combinedUserData.user);
         await StorageUtils.saveUserSession(combinedUserData.user, token);
         return combinedUserData;
       }
@@ -137,18 +191,70 @@ export const userService = {
       );
       const detailResponse = await response.json();
 
+      console.log("[refreshUserProfile] Detail response from API:", detailResponse);
+
+      const apiUserData = detailResponse.data?.user || {};
+
       const combinedUserData = {
         user: {
-          ...detailResponse.data.user,
+          // Start with profile data
+          id: userProfile.id,
           name: userProfile.name,
           username: userProfile.username,
+          email: userProfile.email || apiUserData.email,
           selectedLanguage: userProfile.selectedLanguage,
-          streak: detailResponse.data.user.streak_days || userProfile.streak,
-          level: detailResponse.data.user.current_level || userProfile.level,
+
+          // Map the important fields from API response (snake_case to camelCase)
+          streakDays: apiUserData.streak_days || userProfile.streak || 0,
+          currentLevel: apiUserData.current_level || userProfile.level || 1,
+          xp: apiUserData.xp || userProfile.xp || 0,
+          weeklyXp: apiUserData.weekly_xp || 0,
+          hearts: apiUserData.hearts || 5,
+
+          // Keep the snake_case versions as well for compatibility
+          streak_days: apiUserData.streak_days || userProfile.streak || 0,
+          current_level: apiUserData.current_level || userProfile.level || 1,
+          weekly_xp: apiUserData.weekly_xp || 0,
+
+          // Other fields - same mapping as getUserProfile
+          freezeCount: apiUserData.freeze_count || 0,
+          freeze_count: apiUserData.freeze_count || 0,
+          isFreeze: apiUserData.is_freeze || false,
+          is_freeze: apiUserData.is_freeze || false,
+
+          languageFrom: apiUserData.language_from || "",
+          language_from: apiUserData.language_from || "",
+          languageTo: apiUserData.language_to || "",
+          language_to: apiUserData.language_to || "",
+
+          isPremiere: apiUserData.is_premiere || false,
+          is_premiere: apiUserData.is_premiere || false,
+          balance: apiUserData.balance || 0,
+          isActive: apiUserData.is_active !== false,
+          is_active: apiUserData.is_active !== false,
+          role: apiUserData.role || 0,
+
+          // Course/lesson data
+          currentCourse: apiUserData.current_course,
+          current_course: apiUserData.current_course,
+          currentTopic: apiUserData.current_topic,
+          current_topic: apiUserData.current_topic,
+          currentLesson: apiUserData.current_lesson,
+          current_lesson: apiUserData.current_lesson,
+
+          // Dates
+          createdAt: apiUserData.createdAt || apiUserData.created_at,
+          created_at: apiUserData.createdAt || apiUserData.created_at,
+          updatedAt: apiUserData.updatedAt || apiUserData.updated_at,
+          updated_at: apiUserData.updatedAt || apiUserData.updated_at,
+
+          // Include all other fields from API response
+          ...apiUserData,
         },
         ...detailResponse.data,
       };
 
+      console.log("[refreshUserProfile] Combined user data:", combinedUserData.user);
       await StorageUtils.saveUserSession(combinedUserData.user, token);
       return combinedUserData;
     } catch (error) {
