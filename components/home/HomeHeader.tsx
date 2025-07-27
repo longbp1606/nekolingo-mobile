@@ -24,7 +24,7 @@ export const HomeHeader: React.FC<HeaderProps> = ({
       <View style={styles.headerContent}>
         <Text style={styles.headerTitle}>{title}</Text>
         <Text style={styles.headerSubtitle}>{subtitle}</Text>
-        {userLevel && <Text style={styles.userLevel}>Level {userLevel}</Text>}
+        {/* {userLevel && <Text style={styles.userLevel}>Level {userLevel}</Text>} */}
       </View>
       <TouchableOpacity style={styles.bookmarkButton} onPress={onListPress}>
         <Ionicons name="list" size={24} color="white" />
@@ -39,27 +39,46 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
     position: "relative",
+    zIndex: 10, // Ensure header appears above scroll view content
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    minHeight: 80,
   },
   headerContent: {
     flex: 1,
+    paddingRight: 60, // Give space for the button
+    minHeight: 60,
   },
   headerTitle: {
     color: "white",
     fontSize: 24,
     fontWeight: "bold",
+    marginBottom: 4,
+    lineHeight: 28,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   headerSubtitle: {
     color: "white",
     fontSize: 16,
-    marginTop: 4,
+    marginBottom: 2,
     opacity: 0.9,
+    lineHeight: 20,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   userLevel: {
     color: "white",
     fontSize: 14,
-    marginTop: 2,
     opacity: 0.8,
     fontWeight: "600",
+    lineHeight: 18,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   bookmarkButton: {
     position: "absolute",

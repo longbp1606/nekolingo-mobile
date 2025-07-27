@@ -1,86 +1,55 @@
 import { apiSlice } from "./apiSlice";
 
-export interface UserProgress {
-  userId: string;
-  lessonId: string;
-  completed: boolean;
-  score: number;
-  completedAt?: string;
+// Types for exercise progress
+export interface ExerciseAnswer {
+  exercise_id: string;
+  user_answer: string | string[] | number | object;
+  is_correct: boolean;
+  time_taken: number; // in seconds
 }
 
-export interface LeaderboardEntry {
-  _id: string;
-  username: string;
-  full_name: string;
-  avatar_url?: string;
-  total_xp: number;
-  current_streak: number;
-  rank: number;
+export interface CompleteFullLessonRequest {
+  lesson_id: string;
+  exercise_answers: ExerciseAnswer[];
 }
 
-export interface Achievement {
-  _id: string;
-  name: string;
-  description: string;
-  icon_url?: string;
-  xp_reward: number;
-  requirement_type: string;
-  requirement_value: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+export interface ExplainAnswerRequest {
+  lesson_id: string;
+  exercise_ids: string[];
 }
 
-export const progressApi = apiSlice.injectEndpoints({
+export interface ExplainAnswerResponse {
+  exercise_id: string;
+  explanation: string;
+  grammar?: string;
+  correct_answer: string | number | object | string[] | object[];
+  user_answer: string | number | object | string[] | object[];
+  is_mistake: boolean;
+}
+
+export const progressApiService = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getUserProgress: builder.query<UserProgress[], string>({
-      query: (userId) => `/progress/user/${userId}`,
-      providesTags: (result, error, userId) => [
-        { type: "Progress", id: `user-${userId}` },
-      ],
-    }),
-    updateProgress: builder.mutation<UserProgress, Partial<UserProgress>>({
-      query: (progress) => ({
-        url: "/progress",
+    completeFullLesson: builder.mutation<any, CompleteFullLessonRequest>({
+      query: (data) => ({
+        url: "/user-progress/complete-full-lesson",
         method: "POST",
-        body: progress,
+        body: data,
       }),
-      invalidatesTags: (result, error, { userId }) => [
-        { type: "Progress", id: `user-${userId}` },
-      ],
+      invalidatesTags: ["Lesson", "Topic", "User"], // More specific cache invalidation
     }),
-    getLeaderboard: builder.query<
-      LeaderboardEntry[],
-      { limit?: number } | void
+    explainAnswer: builder.mutation<
+      ExplainAnswerResponse[],
+      ExplainAnswerRequest
     >({
-      query: (params) => ({
-        url: "/leaderboard",
-        params: {
-          limit: params?.limit || 10,
-        },
+      query: (data) => ({
+        url: "/user-progress/explain-answer",
+        method: "POST",
+        body: data,
       }),
-      providesTags: ["Leaderboard"],
-      transformResponse: (response: { data: LeaderboardEntry[] }) =>
-        response.data,
-    }),
-    getAchievements: builder.query<Achievement[], void>({
-      query: () => "/achievement",
-      providesTags: ["Achievement"],
-      transformResponse: (response: { data: Achievement[] }) => response.data,
-    }),
-    getUserAchievements: builder.query<Achievement[], string>({
-      query: (userId) => `/achievement/user/${userId}`,
-      providesTags: (result, error, userId) => [
-        { type: "Achievement", id: `user-${userId}` },
-      ],
     }),
   }),
+  overrideExisting: true, // Allow overriding during hot reload in development
 });
 
-export const {
-  useGetUserProgressQuery,
-  useUpdateProgressMutation,
-  useGetLeaderboardQuery,
-  useGetAchievementsQuery,
-  useGetUserAchievementsQuery,
-} = progressApi;
+export const { useCompleteFullLessonMutation, useExplainAnswerMutation } =
+  progressApiService;

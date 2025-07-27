@@ -8,6 +8,10 @@ export interface Lesson {
   status: "locked" | "in-progress" | "complete";
   title: string;
   lessonId?: string;
+  xpReward?: number;
+  lessonType?: string[];
+  mode?: string;
+  originalTitle?: string;
 }
 
 interface LessonCircleProps {

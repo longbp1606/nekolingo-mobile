@@ -13,6 +13,10 @@ import { useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
 import { RootState } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
+import {
+  ExplainAnswerResponse,
+  useExplainAnswerMutation,
+} from "../../services/progressApiService";
 
 interface ExerciseResult {
   lessonId: string;
@@ -38,6 +42,33 @@ export default function ExerciseResultScreen() {
 
   const { user } = useSelector((state: RootState) => state.auth);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+  const [showExplanations, setShowExplanations] = useState(false);
+  const [explanations, setExplanations] = useState<ExplainAnswerResponse[]>([]);
+  const [loadingExplanations, setLoadingExplanations] = useState(false);
+
+  // API mutation for explaining answers
+  const [explainAnswer] = useExplainAnswerMutation();
+
+  const fetchExplanationsForIncorrectExercises = async () => {
+    if (loadingExplanations || (!user?.id && !user?._id)) return;
+
+    setLoadingExplanations(true);
+    try {
+      // Since we can't easily get the specific exercises from navigation params,
+      // we'll show a button that lets users get explanations for their mistakes
+      // This could be improved by passing more data or creating an endpoint
+      // to get recent exercise mistakes for a lesson
+      console.log("Fetching explanations for lesson:", result.lessonId);
+
+      // For now, we'll show a placeholder or implement a different approach
+      setExplanations([]);
+      setShowExplanations(true);
+    } catch (error) {
+      console.error("Error fetching explanations:", error);
+    } finally {
+      setLoadingExplanations(false);
+    }
+  };
 
   const getResultImage = () => {
     if (result.perfectLesson) return require("../../assets/images/grade.png");
@@ -82,6 +113,15 @@ export default function ExerciseResultScreen() {
     } else {
       router.push("/(tabs)/home");
     }
+  };
+
+  const handleShowExplanations = async () => {
+    if (!showExplanations) {
+      setLoadingExplanations(true);
+      await fetchExplanationsForIncorrectExercises();
+      setLoadingExplanations(false);
+    }
+    setShowExplanations(!showExplanations);
   };
 
   const handleTryAgain = () => {
@@ -163,6 +203,79 @@ export default function ExerciseResultScreen() {
               You answered all questions correctly!
             </Text>
             <Text style={styles.achievementReward}>Bonus: +5 XP</Text>
+          </Card>
+        )}
+
+        {/* Detailed Results Button */}
+        {result.correctAnswers < result.totalQuestions && (
+          <Card style={styles.explanationCard}>
+            <Button
+              title={
+                showExplanations
+                  ? "Hide Detailed Results"
+                  : "Show Detailed Results"
+              }
+              variant="outline"
+              onPress={handleShowExplanations}
+              style={styles.explanationButton}
+            />
+
+            {showExplanations && (
+              <View style={styles.explanationsContainer}>
+                {loadingExplanations ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>
+                      Loading explanations...
+                    </Text>
+                  </View>
+                ) : explanations.length > 0 ? (
+                  <ScrollView style={styles.explanationsList}>
+                    {explanations.map((explanation, index) => (
+                      <View key={index} style={styles.explanationItem}>
+                        <Text style={styles.explanationTitle}>
+                          Question {index + 1}
+                        </Text>
+                        <Text style={styles.explanationText}>
+                          {explanation.explanation}
+                        </Text>
+                        {explanation.grammar && (
+                          <View style={styles.grammarSection}>
+                            <Text style={styles.grammarTitle}>
+                              Grammar Point:
+                            </Text>
+                            <Text style={styles.grammarText}>
+                              {explanation.grammar}
+                            </Text>
+                          </View>
+                        )}
+                        <View style={styles.answerComparison}>
+                          <Text style={styles.correctAnswerLabel}>
+                            Correct:
+                          </Text>
+                          <Text style={styles.correctAnswer}>
+                            {typeof explanation.correct_answer === "string"
+                              ? explanation.correct_answer
+                              : JSON.stringify(explanation.correct_answer)}
+                          </Text>
+                          <Text style={styles.userAnswerLabel}>
+                            Your answer:
+                          </Text>
+                          <Text style={styles.userAnswer}>
+                            {typeof explanation.user_answer === "string"
+                              ? explanation.user_answer
+                              : JSON.stringify(explanation.user_answer)}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text style={styles.noExplanationsText}>
+                    No explanations available for incorrect answers.
+                  </Text>
+                )}
+              </View>
+            )}
           </Card>
         )}
 
@@ -311,5 +424,109 @@ const styles = StyleSheet.create({
   },
   tryAgainButton: {
     borderColor: Colors.primary,
+  },
+  explanationCard: {
+    padding: Sizes.lg,
+    marginBottom: Sizes.md,
+  },
+  explanationButton: {
+    marginBottom: Sizes.md,
+  },
+  explanationsContainer: {
+    marginTop: Sizes.md,
+  },
+  loadingContainer: {
+    padding: Sizes.lg,
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: Sizes.body,
+    color: Colors.textLight,
+  },
+  explanationsList: {
+    maxHeight: 300,
+  },
+  explanationItem: {
+    padding: Sizes.md,
+    marginBottom: Sizes.md,
+    backgroundColor: Colors.card,
+    borderRadius: Sizes.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.error,
+  },
+  explanationTitle: {
+    fontSize: Sizes.body,
+    fontWeight: "600",
+    color: Colors.textDark,
+    marginBottom: Sizes.sm,
+  },
+  explanationText: {
+    fontSize: Sizes.body,
+    color: Colors.textDark,
+    marginBottom: Sizes.sm,
+    lineHeight: 20,
+  },
+  grammarSection: {
+    backgroundColor: Colors.card,
+    padding: Sizes.sm,
+    borderRadius: Sizes.xs,
+    marginBottom: Sizes.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  grammarTitle: {
+    fontSize: Sizes.caption,
+    fontWeight: "600",
+    color: Colors.primary,
+    marginBottom: Sizes.xs,
+  },
+  grammarText: {
+    fontSize: Sizes.caption,
+    color: Colors.primary,
+    fontStyle: "italic",
+  },
+  answerComparison: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: Sizes.xs,
+  },
+  correctAnswerLabel: {
+    fontSize: Sizes.caption,
+    color: Colors.success,
+    fontWeight: "600",
+  },
+  correctAnswer: {
+    fontSize: Sizes.caption,
+    color: Colors.success,
+    backgroundColor: Colors.card,
+    paddingHorizontal: Sizes.xs,
+    paddingVertical: 2,
+    borderRadius: Sizes.xs,
+    borderWidth: 1,
+    borderColor: Colors.success,
+  },
+  userAnswerLabel: {
+    fontSize: Sizes.caption,
+    color: Colors.error,
+    fontWeight: "600",
+    marginLeft: Sizes.sm,
+  },
+  userAnswer: {
+    fontSize: Sizes.caption,
+    color: Colors.error,
+    backgroundColor: Colors.card,
+    paddingHorizontal: Sizes.xs,
+    paddingVertical: 2,
+    borderRadius: Sizes.xs,
+    borderWidth: 1,
+    borderColor: Colors.error,
+  },
+  noExplanationsText: {
+    fontSize: Sizes.body,
+    color: Colors.textLight,
+    textAlign: "center",
+    padding: Sizes.lg,
+    fontStyle: "italic",
   },
 });

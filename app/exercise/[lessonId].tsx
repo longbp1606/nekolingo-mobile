@@ -9,14 +9,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
 import {
   Exercise,
   ExerciseRenderer,
   MatchOption,
 } from "../../components/exercise";
+import { RootState } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
 import { useGetLessonByIdQuery } from "../../services/lessonApiService";
+import {
+  ExerciseAnswer,
+  useCompleteFullLessonMutation,
+} from "../../services/progressApiService";
 
 export default function ExerciseScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
@@ -50,6 +56,21 @@ export default function ExerciseScreen() {
     right?: string;
   }>({});
 
+  // Track exercise progress for API submission
+  const [exerciseProgress, setExerciseProgress] = useState<ExerciseAnswer[]>(
+    []
+  );
+  const [exerciseStartTime, setExerciseStartTime] = useState<number>(
+    Date.now()
+  );
+
+  // Get user from Redux store
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  // API mutation for completing lesson
+  const [completeFullLesson, { isLoading: isSubmittingLesson }] =
+    useCompleteFullLessonMutation();
+
   const correctAnswersRef = useRef(0);
 
   useEffect(() => {
@@ -61,6 +82,11 @@ export default function ExerciseScreen() {
       console.log("Current lesson fetched successfully:", currentLesson);
     }
   }, [currentLesson]);
+
+  // Reset exercise start time when moving to next exercise
+  useEffect(() => {
+    setExerciseStartTime(Date.now());
+  }, [currentExerciseIndex]);
 
   const currentExercise = currentLesson?.exercises?.[
     currentExerciseIndex
@@ -75,6 +101,7 @@ export default function ExerciseScreen() {
     setReorderedWords([]);
     setMatchedPairs({});
     setSelectedMatches({});
+    setExerciseStartTime(Date.now()); // Reset timer for new exercise
   };
 
   // Initialize reordered words for reorder questions
@@ -218,6 +245,43 @@ export default function ExerciseScreen() {
       } else {
         setLives((prev) => Math.max(0, prev - 1));
       }
+
+      // Track this exercise's answer and time for API submission
+      const answerTime = Math.round((Date.now() - exerciseStartTime) / 1000); // Convert to seconds
+      let userAnswerForAPI: any;
+
+      switch (currentExercise.question_format) {
+        case "multiple_choice":
+        case "fill_in_blank":
+        case "listening":
+        case "image_select":
+          userAnswerForAPI = selectedAnswer;
+          break;
+        case "reorder":
+          userAnswerForAPI = reorderedWords.join(" ");
+          break;
+        case "match":
+          userAnswerForAPI = matchedPairs;
+          break;
+        default:
+          userAnswerForAPI = selectedAnswer;
+      }
+
+      const exerciseAnswer: ExerciseAnswer = {
+        exercise_id: currentExercise._id,
+        user_answer: userAnswerForAPI,
+        is_correct: isCorrect,
+        time_taken: answerTime,
+      };
+
+      console.log("Tracking exercise:", {
+        exerciseId: currentExercise._id,
+        userAnswer: userAnswerForAPI,
+        answerTime: answerTime,
+        isCorrect: isCorrect,
+      });
+
+      setExerciseProgress((prev) => [...prev, exerciseAnswer]);
     } catch (error) {
       console.error("Error validating answer:", error);
       Alert.alert("Error", "Failed to validate answer. Please try again.");
@@ -245,7 +309,7 @@ export default function ExerciseScreen() {
     }
   };
 
-  const handleExerciseComplete = () => {
+  const handleExerciseComplete = async () => {
     const finalCorrectAnswers = correctAnswersRef.current;
     const score = Math.round((finalCorrectAnswers / totalExercises) * 100);
     const xpEarned = Math.round(
@@ -254,24 +318,68 @@ export default function ExerciseScreen() {
     const perfectLesson = finalCorrectAnswers === totalExercises;
     const streakIncreased = finalCorrectAnswers / totalExercises >= 0.7;
 
-    const navigationParams = {
-      lessonId: lessonId || "1",
-      score: score.toString(),
-      totalQuestions: totalExercises.toString(),
-      correctAnswers: finalCorrectAnswers.toString(),
-      xpEarned: xpEarned.toString(),
-      perfectLesson: perfectLesson.toString(),
-      streakIncreased: streakIncreased.toString(),
+    // Prepare API payload
+    if (!user?.id && !user?._id) {
+      Alert.alert("Error", "User not found. Please log in again.");
+      router.push("/(tabs)/home");
+      return;
+    }
+
+    const userId = (user.id || user._id) as string; // Safe cast since we checked above
+    const apiPayload = {
+      lesson_id: lessonId || "",
+      exercise_answers: exerciseProgress,
     };
 
     try {
+      // Call the API to complete the lesson
+      console.log("Submitting lesson progress:", apiPayload);
+      const result = await completeFullLesson(apiPayload).unwrap();
+      console.log("Lesson completed successfully:", result);
+
+      // Navigate to results with updated data
+      const navigationParams = {
+        lessonId: lessonId || "1",
+        score: score.toString(),
+        totalQuestions: totalExercises.toString(),
+        correctAnswers: finalCorrectAnswers.toString(),
+        xpEarned: xpEarned.toString(),
+        perfectLesson: perfectLesson.toString(),
+        streakIncreased: streakIncreased.toString(),
+      };
+
       router.push({
         pathname: "/exercise/result",
         params: navigationParams,
       });
     } catch (error) {
-      console.error("Navigation error:", error);
-      router.push("/(tabs)/home");
+      console.error("Error submitting lesson progress:", error);
+      Alert.alert(
+        "Error",
+        "Failed to save your progress. Your answers have been recorded locally.",
+        [
+          {
+            text: "Continue",
+            onPress: () => {
+              // Still navigate to results even if API fails
+              const navigationParams = {
+                lessonId: lessonId || "1",
+                score: score.toString(),
+                totalQuestions: totalExercises.toString(),
+                correctAnswers: finalCorrectAnswers.toString(),
+                xpEarned: xpEarned.toString(),
+                perfectLesson: perfectLesson.toString(),
+                streakIncreased: streakIncreased.toString(),
+              };
+
+              router.push({
+                pathname: "/exercise/result",
+                params: navigationParams,
+              });
+            },
+          },
+        ]
+      );
     }
   };
 
@@ -508,13 +616,15 @@ export default function ExerciseScreen() {
               title={
                 currentExerciseIndex < totalExercises - 1
                   ? "Next"
+                  : isSubmittingLesson
+                  ? "Saving Progress..."
                   : "View Results"
               }
               onPress={handleNext}
-              disabled={isProcessing}
+              disabled={isProcessing || isSubmittingLesson}
               style={[
                 styles.submitButton,
-                isProcessing && styles.disabledButton,
+                (isProcessing || isSubmittingLesson) && styles.disabledButton,
               ]}
             />
           )}
