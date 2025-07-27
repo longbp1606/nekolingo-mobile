@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -9,11 +10,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import { BackButton, Button, OnboardingProgressBar } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch } from "../../stores";
-import { setCurrentStep, setSource } from "../../stores/onboardingSlice";
 
 interface SourceOption {
   key: string;
@@ -75,17 +73,21 @@ const sources: SourceOption[] = [
 export default function SourceSelectionScreen() {
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
 
   const handleSourceSelect = (sourceKey: string) => {
     setSelectedSource(sourceKey);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedSource) {
-      dispatch(setSource(selectedSource));
-      dispatch(setCurrentStep(5));
-      router.push("/onboarding/reason-selection" as any);
+      try {
+        // Store the selected source
+        await AsyncStorage.setItem("selectedSource", selectedSource);
+
+        router.push("/onboarding/reason-selection" as any);
+      } catch (error) {
+        console.error("Error saving source:", error);
+      }
     }
   };
 

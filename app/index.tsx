@@ -2,15 +2,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { useSelector } from "react-redux";
+import { RootState } from "../config/store";
 import { Colors, Sizes } from "../constants";
 import { useOnboardingCheck } from "../hooks/useOnboardingCheck";
-import { RootState } from "../stores";
 
-// Debug function to clear AsyncStorage
+// Debug function to clear AsyncStorage and reset onboarding
 const clearAsyncStorage = async () => {
   try {
     await AsyncStorage.clear();
-    console.log("AsyncStorage cleared!");
+    console.log("AsyncStorage cleared! App will restart onboarding flow.");
   } catch (error) {
     console.error("Error clearing AsyncStorage:", error);
   }
@@ -18,14 +18,11 @@ const clearAsyncStorage = async () => {
 
 export default function Index() {
   const { user, token, isInitialized } = useSelector(
-    (state: RootState) => state.user
+    (state: RootState) => state.auth
   );
   const { isCompleted: onboardingCompleted, isLoaded: onboardingLoaded } =
-    useSelector((state: RootState) => state.onboarding);
+    useOnboardingCheck();
   const router = useRouter();
-
-  // Load onboarding state from AsyncStorage
-  useOnboardingCheck();
 
   // Show loading until both auth and onboarding data are loaded
   if (!isInitialized || !onboardingLoaded) {
@@ -39,10 +36,11 @@ export default function Index() {
   // Determine which screen to show based on auth state and onboarding
   const getInitialRoute = () => {
     console.log("=== NAVIGATION DEBUG ===");
-    console.log("Token:", token);
+    console.log("Token:", !!token);
     console.log("Onboarding Completed:", onboardingCompleted);
     console.log("Onboarding Loaded:", onboardingLoaded);
-    console.log("User Language:", user?.selectedLanguage);
+    console.log("Is Initialized:", isInitialized);
+    console.log("User:", !!user);
     console.log("========================");
 
     // NEW LOGIC: Onboarding first, then authentication

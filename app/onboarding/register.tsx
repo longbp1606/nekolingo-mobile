@@ -1,12 +1,19 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { BackButton, Button } from "../../components";
+import { AppDispatch } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { setupRegisterUser } from "../../stores/userSlice";
+import { useOnboardingCheck } from "../../hooks/useOnboardingCheck";
+import {
+  useLoginMutation,
+  useSetupRegisterMutation,
+} from "../../services/auth/authApiService";
+import { storeAuthData } from "../../services/auth/authSlice";
+import { Language } from "../../services/languageApiService";
 
 export default function OnboardingRegisterScreen() {
   const [email, setEmail] = useState("");
@@ -15,10 +22,14 @@ export default function OnboardingRegisterScreen() {
   const [username, setUsername] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { loading, error } = useSelector((state: RootState) => state.user);
-  const onboardingState = useSelector((state: RootState) => state.onboarding);
+  const dispatch = useDispatch<AppDispatch>();
+  const { completeOnboarding } = useOnboardingCheck();
+  const [setupRegister, { isLoading: registerLoading }] =
+    useSetupRegisterMutation();
+  const [login, { isLoading: loginLoading }] = useLoginMutation();
+
+  const loading = registerLoading || loginLoading;
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -65,39 +76,49 @@ export default function OnboardingRegisterScreen() {
       return;
     }
 
-    // Get language selections from language slice
-    const languageState = useSelector((state: RootState) => state.language);
-    const language_from = languageState.selectedLanguageFrom?.code || "vi"; // Default to Vietnamese
-    const language_to =
-      languageState.selectedLanguageTo?.code ||
-      onboardingState.selectedLanguage ||
-      "en";
-    const current_level = onboardingState.selectedLevel || 1;
-
-    // Validate that a target language is selected
-    if (!language_to || language_to === language_from) {
-      setValidationError(
-        "Please select a language to learn that is different from your native language"
-      );
-      return;
-    }
-
     try {
-      await dispatch(
-        setupRegisterUser({
-          email,
-          password,
-          username: username || undefined,
-          language_from,
-          language_to,
-          current_level,
-        })
-      ).unwrap();
+      // Get selected language from AsyncStorage
+      const storedLanguageStr = await AsyncStorage.getItem("selectedLanguage");
 
-      // Navigate to home on success
+      if (!storedLanguageStr) {
+        setValidationError("Please select a language to learn first");
+        return;
+      }
+
+      const selectedLanguage: Language = JSON.parse(storedLanguageStr);
+
+      // Step 1: Call setup-register API to create the account
+      await setupRegister({
+        email,
+        password,
+        username: username || email.split("@")[0], // Use email prefix if no username
+        language_from: "vi", // Vietnamese (source language)
+        language_to: selectedLanguage.code, // Target language
+        current_level: 0, // Beginner level
+      }).unwrap();
+
+      // Step 2: Login to get the auth tokens
+      const loginResult = await login({
+        email,
+        password,
+      }).unwrap();
+
+      // Step 3: Store authentication data
+      await dispatch(storeAuthData(loginResult.data));
+
+      // Step 4: Mark onboarding as completed
+      await completeOnboarding();
+
+      // Step 5: Clear the stored language data since it's now saved in the user profile
+      await AsyncStorage.removeItem("selectedLanguage");
+
+      // Step 6: Navigate to home
       router.push("/(tabs)/home" as any);
-    } catch (error) {
+    } catch (error: any) {
       console.log("Registration failed", error);
+      const errorMessage =
+        error?.data?.message || "Registration failed. Please try again.";
+      setValidationError(errorMessage);
     }
   };
 
@@ -114,8 +135,8 @@ export default function OnboardingRegisterScreen() {
         </View>
 
         <View style={styles.formContainer}>
-          {(error || validationError) && (
-            <Text style={styles.errorText}>{error || validationError}</Text>
+          {validationError && (
+            <Text style={styles.errorText}>{validationError}</Text>
           )}
 
           <View style={styles.inputContainer}>

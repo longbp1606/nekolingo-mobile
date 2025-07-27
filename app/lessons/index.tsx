@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import {
   FlatList,
   StyleSheet,
@@ -8,37 +8,51 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { fetchLessons } from "../../stores/lessonsSlice";
+import { useGetCoursesQuery } from "../../services/courseApiService";
+import { useGetTopicsByCourseQuery } from "../../services/topicApiService";
 
 export default function LessonsScreen() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { lessons, loading, error } = useSelector(
-    (state: RootState) => state.lessons
-  );
 
-  useEffect(() => {
-    dispatch(fetchLessons("ja")); // Default to Japanese for now
-  }, [dispatch]);
+  // Get courses first
+  const {
+    data: coursesResponse,
+    isLoading: coursesLoading,
+    error: coursesError,
+  } = useGetCoursesQuery();
+
+  // Get topics from the first course (or you can make this dynamic)
+  const firstCourse = coursesResponse?.courses?.[0];
+  const {
+    data: topics,
+    isLoading: topicsLoading,
+    error: topicsError,
+    refetch: refetchTopics,
+  } = useGetTopicsByCourseQuery(firstCourse?._id || "", {
+    skip: !firstCourse?._id,
+  });
+
+  const loading = coursesLoading || topicsLoading;
+  const error = coursesError || topicsError;
 
   const renderLesson = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.lessonItem}
-      onPress={() => router.push(`/lessons/${item.id}` as any)}
+      onPress={() => router.push(`/lessons/${item._id}` as any)}
     >
       <Card style={styles.lessonCard}>
         <View style={styles.lessonHeader}>
           <Text style={styles.lessonTitle}>{item.title}</Text>
-          <Text style={styles.lessonLevel}>Level {item.level}</Text>
+          <Text style={styles.lessonLevel}>Order {item.order}</Text>
         </View>
-        <Text style={styles.lessonDescription}>{item.description}</Text>
+        <Text style={styles.lessonDescription}>
+          {item.description || "Learn this topic"}
+        </Text>
         <View style={styles.lessonFooter}>
-          <ProgressBar progress={item.progress} style={styles.progressBar} />
-          <Text style={styles.lessonXP}>+{item.xpReward} XP</Text>
+          <ProgressBar progress={0} style={styles.progressBar} />
+          <Text style={styles.lessonXP}>+10 XP</Text>
         </View>
       </Card>
     </TouchableOpacity>
@@ -76,10 +90,12 @@ export default function LessonsScreen() {
           <Text style={styles.title}>Lessons</Text>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Error: {error}</Text>
+          <Text style={styles.errorText}>
+            {error ? "Failed to load lessons" : "No lessons available"}
+          </Text>
           <Button
             title="Try Again"
-            onPress={() => dispatch(fetchLessons("ja"))}
+            onPress={() => refetchTopics()}
             style={styles.retryButton}
           />
         </View>
@@ -100,9 +116,9 @@ export default function LessonsScreen() {
       </View>
 
       <FlatList
-        data={lessons}
+        data={topics || []}
         renderItem={renderLesson}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item._id.toString()}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />

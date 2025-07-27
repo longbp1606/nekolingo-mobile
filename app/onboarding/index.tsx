@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -14,6 +15,22 @@ export default function OnboardingScreen() {
 
   const handleLogin = () => {
     router.push("/auth/login");
+  };
+
+  // Debug function to check AsyncStorage
+  const checkAsyncStorage = async () => {
+    try {
+      const onboardingStatus = await AsyncStorage.getItem(
+        "onboarding_completed"
+      );
+      const token = await AsyncStorage.getItem("auth_token");
+      console.log("=== ASYNC STORAGE DEBUG ===");
+      console.log("Onboarding completed:", onboardingStatus);
+      console.log("Auth token exists:", !!token);
+      console.log("==========================");
+    } catch (error) {
+      console.error("Error checking AsyncStorage:", error);
+    }
   };
 
   return (
@@ -67,6 +84,16 @@ export default function OnboardingScreen() {
             <Text style={styles.loginLink}>Log in</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Debug button for development */}
+        {__DEV__ && (
+          <TouchableOpacity
+            onPress={checkAsyncStorage}
+            style={styles.debugButton}
+          >
+            <Text style={styles.debugText}>Debug Storage</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -143,5 +170,16 @@ const styles = StyleSheet.create({
     fontSize: Sizes.body,
     color: Colors.primary,
     fontWeight: "bold",
+  },
+  debugButton: {
+    marginTop: Sizes.md,
+    padding: Sizes.sm,
+    backgroundColor: Colors.secondary,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  debugText: {
+    color: Colors.background,
+    fontSize: Sizes.caption,
   },
 });

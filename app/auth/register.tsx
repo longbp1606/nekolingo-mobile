@@ -8,26 +8,29 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { registerUser } from "../../stores/userSlice";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function RegisterScreen() {
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
+  const { register, isLoading, error } = useAuth();
   const router = useRouter();
-  const { loading, error } = useSelector((state: RootState) => state.user);
 
   const validateForm = () => {
-    if (!name.trim()) {
+    if (!fullName.trim()) {
       setValidationError("Name is required");
+      return false;
+    }
+
+    if (!username.trim()) {
+      setValidationError("Username is required");
       return false;
     }
 
@@ -76,11 +79,20 @@ export default function RegisterScreen() {
     }
 
     try {
-      await dispatch(registerUser({ name, email, password })).unwrap();
-      // Navigate to home (onboarding should already be completed)
-      router.push("/(tabs)/home" as any);
-    } catch (error) {
+      await register({
+        username,
+        email,
+        password,
+        full_name: fullName,
+        profile_language: "vi", // Default to Vietnamese, you might want to make this selectable
+        learning_language: "en", // Default to English, you might want to make this selectable
+      });
+      // Navigate to home after successful registration
+      router.replace("/(tabs)/home");
+    } catch (error: any) {
       console.log("Registration failed", error);
+      // The error will be displayed via the useAuth hook's error state
+      setValidationError(null); // Clear validation error since this is a server error
     }
   };
 
@@ -99,10 +111,21 @@ export default function RegisterScreen() {
           <Text style={styles.label}>Name</Text>
           <TextInput
             style={styles.input}
-            value={name}
-            onChangeText={setName}
+            value={fullName}
+            onChangeText={setFullName}
             placeholder="Enter your name"
             autoCapitalize="words"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Username</Text>
+          <TextInput
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Enter your username"
+            autoCapitalize="none"
           />
         </View>
 
@@ -143,7 +166,7 @@ export default function RegisterScreen() {
         <Button
           title="Create Account"
           onPress={handleRegister}
-          loading={loading}
+          loading={isLoading}
           style={styles.registerButton}
         />
 

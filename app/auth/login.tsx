@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -8,32 +9,40 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { loginUser } from "../../stores/userSlice";
-import { StorageUtils } from "../../utils/storage";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const dispatch = useDispatch<AppDispatch>();
+  const { login, isLoading, error } = useAuth();
   const router = useRouter();
-  const { loading, error } = useSelector((state: RootState) => state.user);
 
   const handleLogin = async () => {
     if (!email || !password) return;
 
     try {
-      const result = await dispatch(loginUser({ email, password })).unwrap();
-
-      await StorageUtils.saveUserSession(result.user, result.token);
-
+      await login({ email, password });
+      // Navigate to home on success (onboarding should already be completed)
       router.push("/(tabs)/home" as any);
     } catch (error) {
+      // Error is handled by the useAuth hook
       console.log("Login failed", error);
+    }
+  };
+
+  // Debug function to reset onboarding for testing
+  const resetOnboardingForTesting = async () => {
+    try {
+      await AsyncStorage.removeItem("onboarding_completed");
+      await AsyncStorage.removeItem("auth_token");
+      console.log("Onboarding and auth reset! App will restart.");
+      // Reload the app
+      router.replace("/");
+    } catch (error) {
+      console.error("Error resetting onboarding:", error);
     }
   };
 
@@ -89,7 +98,7 @@ export default function LoginScreen() {
         <Button
           title="Login"
           onPress={handleLogin}
-          loading={loading}
+          loading={isLoading}
           style={styles.loginButton}
         />
 
@@ -102,6 +111,16 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </Link>
         </View>
+
+        {/* Debug button for testing - only in development */}
+        {__DEV__ && (
+          <TouchableOpacity
+            onPress={resetOnboardingForTesting}
+            style={styles.debugButton}
+          >
+            <Text style={styles.debugText}>Reset Onboarding (Dev Only)</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -177,6 +196,18 @@ const styles = StyleSheet.create({
   registerLink: {
     fontSize: Sizes.body,
     color: Colors.primary,
+    fontWeight: "bold",
+  },
+  debugButton: {
+    marginTop: Sizes.lg,
+    padding: Sizes.sm,
+    backgroundColor: Colors.error,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  debugText: {
+    color: Colors.background,
+    fontSize: Sizes.caption,
     fontWeight: "bold",
   },
 });

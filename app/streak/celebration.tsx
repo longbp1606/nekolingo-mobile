@@ -2,14 +2,13 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { RootState } from "../../stores";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function StreakCelebrationScreen() {
   const router = useRouter();
-  const { user } = useSelector((state: RootState) => state.user);
+  const { user } = useAuth();
   const [animation] = useState(new Animated.Value(0));
   const [flameAnimation] = useState(new Animated.Value(0));
 
@@ -37,7 +36,7 @@ export default function StreakCelebrationScreen() {
     router.push("/(tabs)/streak" as any);
   };
 
-  const currentStreak = user?.streak || 0;
+  const currentStreak = user?.current_streak || 0;
   const streakGoal = Math.ceil(currentStreak / 5) * 5; // Next milestone (5, 10, 15, etc.)
 
   return (
@@ -105,11 +104,11 @@ export default function StreakCelebrationScreen() {
             <Text style={styles.statLabel}>Current Streak</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{user?.streak || 0}</Text>
+            <Text style={styles.statValue}>{user?.longest_streak || 0}</Text>
             <Text style={styles.statLabel}>Longest Streak</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{user?.xp || 0}</Text>
+            <Text style={styles.statValue}>{user?.total_xp || 0}</Text>
             <Text style={styles.statLabel}>Total XP</Text>
           </View>
         </View>

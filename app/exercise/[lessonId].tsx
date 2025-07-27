@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,18 +9,28 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
+import {
+  Exercise,
+  ExerciseRenderer,
+  MatchOption,
+} from "../../components/exercise";
 import { Colors, Sizes } from "../../constants";
-import { AppDispatch, RootState } from "../../stores";
-import { fetchLessonById } from "../../stores/lessonsSlice";
+import { useGetLessonByIdQuery } from "../../services/lessonApiService";
 
 export default function ExerciseScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { currentLesson, loading, error } = useSelector(
-    (state: RootState) => state.lessons
+
+  const {
+    data: currentLesson,
+    isLoading: loading,
+    error,
+  } = useGetLessonByIdQuery(
+    { lessonId: lessonId || "" },
+    {
+      skip: !lessonId,
+    }
   );
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -27,49 +38,190 @@ export default function ExerciseScreen() {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [lives, setLives] = useState(5); // Thêm số mạng
+  const [lives, setLives] = useState(5);
+
+  // Additional state for different question types
+  const [reorderedWords, setReorderedWords] = useState<string[]>([]);
+  const [matchedPairs, setMatchedPairs] = useState<{ [key: string]: string }>(
+    {}
+  );
+  const [selectedMatches, setSelectedMatches] = useState<{
+    left?: string;
+    right?: string;
+  }>({});
 
   const correctAnswersRef = useRef(0);
-
-  useEffect(() => {
-    if (lessonId) {
-      dispatch(fetchLessonById(lessonId));
-    }
-  }, [dispatch, lessonId]);
 
   useEffect(() => {
     correctAnswersRef.current = correctAnswers;
   }, [correctAnswers]);
 
-  const currentExercise = currentLesson?.exercises[currentExerciseIndex];
-  const totalExercises = currentLesson?.exercises.length || 0;
+  useEffect(() => {
+    if (currentLesson) {
+      console.log("Current lesson fetched successfully:", currentLesson);
+    }
+  }, [currentLesson]);
+
+  const currentExercise = currentLesson?.exercises?.[
+    currentExerciseIndex
+  ] as Exercise;
+  const totalExercises = currentLesson?.exercises?.length || 0;
   const progress =
     totalExercises > 0 ? (currentExerciseIndex + 1) / totalExercises : 0;
 
+  // Reset all answer states
+  const resetAnswerStates = () => {
+    setSelectedAnswer(null);
+    setReorderedWords([]);
+    setMatchedPairs({});
+    setSelectedMatches({});
+  };
+
+  // Initialize reordered words for reorder questions
+  useEffect(() => {
+    if (
+      currentExercise?.question_format === "reorder" &&
+      Array.isArray(currentExercise.options)
+    ) {
+      try {
+        const options = currentExercise.options as string[];
+        setReorderedWords([...options]);
+      } catch (error) {
+        console.error("Error setting up reorder words:", error);
+        setReorderedWords([]);
+      }
+    }
+  }, [currentExercise]);
+
+  // Handle match pairs change
+  const handleMatchPairs = React.useCallback(
+    (newPairs: { [key: string]: string }) => {
+      setMatchedPairs(newPairs);
+      // For match questions, we'll validate in submit
+    },
+    []
+  );
+
+  // Handle reorder words change
+  const handleReorderWords = React.useCallback((newWords: string[]) => {
+    setReorderedWords(newWords);
+    setSelectedAnswer(newWords.join(" "));
+  }, []);
+
+  // Handle answer selection based on question format
   const handleAnswerSelect = (answer: string) => {
-    if (!isAnswerSubmitted && !isProcessing) {
-      setSelectedAnswer(answer);
+    if (!isAnswerSubmitted && !isProcessing && currentExercise) {
+      try {
+        switch (currentExercise.question_format) {
+          case "multiple_choice":
+          case "fill_in_blank":
+          case "listening":
+            setSelectedAnswer(answer);
+            break;
+          case "image_select":
+            // For image select, answer is the value property
+            setSelectedAnswer(answer);
+            break;
+          case "reorder":
+            // Handle word reordering - not used in this function
+            break;
+          case "match":
+            // Handle matching - not used in this function
+            break;
+          default:
+            console.warn(
+              "Unknown question format:",
+              currentExercise.question_format
+            );
+            setSelectedAnswer(answer);
+        }
+      } catch (error) {
+        console.error("Error handling answer selection:", error);
+        Alert.alert("Error", "Failed to select answer. Please try again.");
+      }
     }
   };
 
   const handleSubmitAnswer = () => {
-    if (!selectedAnswer || !currentExercise || isProcessing) return;
+    if (!currentExercise || isProcessing) return;
+
+    // Check if we have a valid answer based on question format
+    const hasValidAnswer = () => {
+      switch (currentExercise.question_format) {
+        case "multiple_choice":
+        case "fill_in_blank":
+        case "listening":
+        case "image_select":
+          return selectedAnswer !== null && selectedAnswer.trim() !== "";
+        case "reorder":
+          return (
+            reorderedWords.length > 0 &&
+            reorderedWords.every((word) => word.trim() !== "")
+          );
+        case "match":
+          const options = currentExercise.options as MatchOption[];
+          return Object.keys(matchedPairs).length === options.length;
+        default:
+          return selectedAnswer !== null;
+      }
+    };
+
+    if (!hasValidAnswer()) return;
 
     setIsProcessing(true);
     setIsAnswerSubmitted(true);
 
-    const isCorrect = Array.isArray(currentExercise.correctAnswer)
-      ? currentExercise.correctAnswer.includes(selectedAnswer)
-      : currentExercise.correctAnswer === selectedAnswer;
+    try {
+      let isCorrect = false;
 
-    if (isCorrect) {
-      setCorrectAnswers((prev) => {
-        const newCount = prev + 1;
-        correctAnswersRef.current = newCount;
-        return newCount;
-      });
-    } else {
-      setLives((prev) => Math.max(0, prev - 1)); // Trừ mạng khi sai
+      switch (currentExercise.question_format) {
+        case "multiple_choice":
+        case "fill_in_blank":
+        case "listening":
+        case "image_select":
+          if (Array.isArray(currentExercise.correct_answer)) {
+            isCorrect = (currentExercise.correct_answer as string[]).includes(
+              selectedAnswer!
+            );
+          } else {
+            isCorrect = currentExercise.correct_answer === selectedAnswer;
+          }
+          break;
+        case "reorder":
+          const userAnswer = reorderedWords.join(" ");
+          isCorrect =
+            typeof currentExercise.correct_answer === "string"
+              ? currentExercise.correct_answer.toLowerCase() ===
+                userAnswer.toLowerCase()
+              : false;
+          break;
+        case "match":
+          // For match questions, check if all pairs are correctly matched
+          if (Array.isArray(currentExercise.correct_answer)) {
+            const correctPairs =
+              currentExercise.correct_answer as MatchOption[];
+            isCorrect = correctPairs.every(
+              (pair) => matchedPairs[pair.left] === pair.right
+            );
+          }
+          break;
+        default:
+          isCorrect = currentExercise.correct_answer === selectedAnswer;
+      }
+
+      if (isCorrect) {
+        setCorrectAnswers((prev) => {
+          const newCount = prev + 1;
+          correctAnswersRef.current = newCount;
+          return newCount;
+        });
+      } else {
+        setLives((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Error validating answer:", error);
+      Alert.alert("Error", "Failed to validate answer. Please try again.");
+      setLives((prev) => Math.max(0, prev - 1));
     }
 
     setTimeout(() => {
@@ -84,7 +236,7 @@ export default function ExerciseScreen() {
       setIsProcessing(true);
       setTimeout(() => {
         setCurrentExerciseIndex((prev) => prev + 1);
-        setSelectedAnswer(null);
+        resetAnswerStates(); // Reset all answer states
         setIsAnswerSubmitted(false);
         setIsProcessing(false);
       }, 100);
@@ -97,7 +249,7 @@ export default function ExerciseScreen() {
     const finalCorrectAnswers = correctAnswersRef.current;
     const score = Math.round((finalCorrectAnswers / totalExercises) * 100);
     const xpEarned = Math.round(
-      (finalCorrectAnswers / totalExercises) * (currentLesson?.xpReward || 10)
+      (finalCorrectAnswers / totalExercises) * (currentLesson?.xp_reward || 10)
     );
     const perfectLesson = finalCorrectAnswers === totalExercises;
     const streakIncreased = finalCorrectAnswers / totalExercises >= 0.7;
@@ -131,19 +283,33 @@ export default function ExerciseScreen() {
       ];
     }
 
-    const isCorrect = Array.isArray(currentExercise?.correctAnswer)
-      ? currentExercise?.correctAnswer.includes(answer)
-      : currentExercise?.correctAnswer === answer;
+    try {
+      let isCorrect = false;
+      if (currentExercise?.correct_answer) {
+        if (Array.isArray(currentExercise.correct_answer)) {
+          // Check if it's a string array
+          const stringArray = currentExercise.correct_answer.filter(
+            (item) => typeof item === "string"
+          ) as string[];
+          isCorrect = stringArray.includes(answer);
+        } else if (typeof currentExercise.correct_answer === "string") {
+          isCorrect = currentExercise.correct_answer === answer;
+        }
+      }
 
-    if (isCorrect) {
-      return [styles.answerButton, styles.correctAnswer];
+      if (isCorrect) {
+        return [styles.answerButton, styles.correctAnswer];
+      }
+
+      if (selectedAnswer === answer && !isCorrect) {
+        return [styles.answerButton, styles.wrongAnswer];
+      }
+
+      return [styles.answerButton, styles.disabledAnswer];
+    } catch (error) {
+      console.error("Error in getAnswerStyle:", error);
+      return [styles.answerButton, styles.disabledAnswer];
     }
-
-    if (selectedAnswer === answer && !isCorrect) {
-      return [styles.answerButton, styles.wrongAnswer];
-    }
-
-    return [styles.answerButton, styles.disabledAnswer];
   };
 
   const getAnswerTextStyle = (answer: string) => {
@@ -154,19 +320,33 @@ export default function ExerciseScreen() {
       ];
     }
 
-    const isCorrect = Array.isArray(currentExercise?.correctAnswer)
-      ? currentExercise?.correctAnswer.includes(answer)
-      : currentExercise?.correctAnswer === answer;
+    try {
+      let isCorrect = false;
+      if (currentExercise?.correct_answer) {
+        if (Array.isArray(currentExercise.correct_answer)) {
+          // Check if it's a string array
+          const stringArray = currentExercise.correct_answer.filter(
+            (item) => typeof item === "string"
+          ) as string[];
+          isCorrect = stringArray.includes(answer);
+        } else if (typeof currentExercise.correct_answer === "string") {
+          isCorrect = currentExercise.correct_answer === answer;
+        }
+      }
 
-    if (isCorrect) {
-      return [styles.answerText, styles.correctAnswerText];
+      if (isCorrect) {
+        return [styles.answerText, styles.correctAnswerText];
+      }
+
+      if (selectedAnswer === answer && !isCorrect) {
+        return [styles.answerText, styles.wrongAnswerText];
+      }
+
+      return [styles.answerText, styles.disabledAnswerText];
+    } catch (error) {
+      console.error("Error in getAnswerTextStyle:", error);
+      return [styles.answerText, styles.disabledAnswerText];
     }
-
-    if (selectedAnswer === answer && !isCorrect) {
-      return [styles.answerText, styles.wrongAnswerText];
-    }
-
-    return [styles.answerText, styles.disabledAnswerText];
   };
 
   if (loading) {
@@ -201,7 +381,9 @@ export default function ExerciseScreen() {
           <Text style={styles.title}>Exercise</Text>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error || "Exercise not found"}</Text>
+          <Text style={styles.errorText}>
+            {error ? "Failed to load exercise" : "Exercise not found"}
+          </Text>
           <Button
             title="Go Back"
             onPress={() => router.back()}
@@ -243,27 +425,19 @@ export default function ExerciseScreen() {
         <Card style={styles.exerciseCard}>
           <Text style={styles.questionText}>{currentExercise.question}</Text>
 
-          {currentExercise.options && (
-            <View style={styles.optionsContainer}>
-              {currentExercise.options.map((option, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={getAnswerStyle(option)}
-                  onPress={() => handleAnswerSelect(option)}
-                  disabled={isAnswerSubmitted || isProcessing}
-                >
-                  <Text style={getAnswerTextStyle(option)}>{option}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {currentExercise.hints && currentExercise.hints.length > 0 && (
-            <View style={styles.hintContainer}>
-              <Text style={styles.hintLabel}>💡 Hint:</Text>
-              <Text style={styles.hintText}>{currentExercise.hints[0]}</Text>
-            </View>
-          )}
+          <ExerciseRenderer
+            exercise={currentExercise}
+            selectedAnswer={selectedAnswer}
+            onAnswerSelect={handleAnswerSelect}
+            isAnswerSubmitted={isAnswerSubmitted}
+            isProcessing={isProcessing}
+            getAnswerStyle={getAnswerStyle}
+            getAnswerTextStyle={getAnswerTextStyle}
+            reorderedWords={reorderedWords}
+            onReorderWords={handleReorderWords}
+            matchedPairs={matchedPairs}
+            onMatchPairs={handleMatchPairs}
+          />
         </Card>
 
         <View style={styles.actionContainer}>
@@ -271,15 +445,71 @@ export default function ExerciseScreen() {
             <Button
               title="Submit"
               onPress={handleSubmitAnswer}
-              disabled={!selectedAnswer || isProcessing}
+              disabled={(() => {
+                switch (currentExercise?.question_format) {
+                  case "multiple_choice":
+                  case "fill_in_blank":
+                  case "listening":
+                  case "image_select":
+                    return !selectedAnswer || isProcessing;
+                  case "reorder":
+                    return (
+                      reorderedWords.length === 0 ||
+                      reorderedWords.some((word) => !word.trim()) ||
+                      isProcessing
+                    );
+                  case "match":
+                    const options = currentExercise.options as MatchOption[];
+                    return (
+                      Object.keys(matchedPairs).length < options.length ||
+                      isProcessing
+                    );
+                  default:
+                    return !selectedAnswer || isProcessing;
+                }
+              })()}
               style={[
                 styles.submitButton,
-                (!selectedAnswer || isProcessing) && styles.disabledButton,
-              ]}
+                (() => {
+                  switch (currentExercise?.question_format) {
+                    case "multiple_choice":
+                    case "fill_in_blank":
+                    case "listening":
+                    case "image_select":
+                      return (
+                        (!selectedAnswer || isProcessing) &&
+                        styles.disabledButton
+                      );
+                    case "reorder":
+                      return (
+                        (reorderedWords.length === 0 ||
+                          reorderedWords.some((word) => !word.trim()) ||
+                          isProcessing) &&
+                        styles.disabledButton
+                      );
+                    case "match":
+                      const options = currentExercise.options as MatchOption[];
+                      return (
+                        (Object.keys(matchedPairs).length < options.length ||
+                          isProcessing) &&
+                        styles.disabledButton
+                      );
+                    default:
+                      return (
+                        (!selectedAnswer || isProcessing) &&
+                        styles.disabledButton
+                      );
+                  }
+                })(),
+              ].filter(Boolean)}
             />
           ) : (
             <Button
-              title={currentExerciseIndex < totalExercises - 1 ? "Next" : "View Results"}
+              title={
+                currentExerciseIndex < totalExercises - 1
+                  ? "Next"
+                  : "View Results"
+              }
               onPress={handleNext}
               disabled={isProcessing}
               style={[
@@ -457,5 +687,113 @@ const styles = StyleSheet.create({
   heart: {
     fontSize: 16,
     marginHorizontal: 1,
+  },
+  // Styles for image options
+  imageOptionsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginVertical: Sizes.md,
+  },
+  imageOption: {
+    width: "48%",
+    backgroundColor: Colors.card,
+    borderRadius: Sizes.sm,
+    padding: Sizes.sm,
+    marginBottom: Sizes.sm,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  selectedImageOption: {
+    backgroundColor: Colors.background,
+    borderColor: Colors.primary,
+  },
+  optionImage: {
+    width: 60,
+    height: 60,
+    borderRadius: Sizes.sm,
+    marginBottom: Sizes.xs,
+  },
+  imageOptionText: {
+    fontSize: Sizes.body,
+    color: Colors.text,
+    textAlign: "center",
+  },
+  // Styles for reorder exercise
+  reorderContainer: {
+    marginVertical: Sizes.md,
+  },
+  reorderInstructions: {
+    fontSize: Sizes.body,
+    color: Colors.textLight,
+    marginBottom: Sizes.md,
+    textAlign: "center",
+  },
+  wordsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginBottom: Sizes.md,
+  },
+  wordButton: {
+    backgroundColor: Colors.card,
+    borderRadius: Sizes.sm,
+    padding: Sizes.sm,
+    margin: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  wordText: {
+    fontSize: Sizes.body,
+    color: Colors.text,
+  },
+  sentencePreview: {
+    backgroundColor: Colors.background,
+    borderRadius: Sizes.sm,
+    padding: Sizes.md,
+    minHeight: 50,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  sentenceText: {
+    fontSize: Sizes.body,
+    color: Colors.text,
+    textAlign: "center",
+  },
+  // Styles for match exercise
+  matchContainer: {
+    marginVertical: Sizes.md,
+  },
+  matchInstructions: {
+    fontSize: Sizes.body,
+    color: Colors.textLight,
+    marginBottom: Sizes.md,
+    textAlign: "center",
+  },
+  matchPair: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.card,
+    borderRadius: Sizes.sm,
+    padding: Sizes.md,
+    marginBottom: Sizes.sm,
+  },
+  matchLeft: {
+    flex: 1,
+    fontSize: Sizes.body,
+    color: Colors.text,
+  },
+  matchArrow: {
+    fontSize: Sizes.body,
+    color: Colors.textLight,
+    marginHorizontal: Sizes.sm,
+  },
+  matchRight: {
+    flex: 1,
+    fontSize: Sizes.body,
+    color: Colors.text,
+    textAlign: "right",
   },
 });

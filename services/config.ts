@@ -1,14 +1,6 @@
-// API configuration
+// API Configuration
+export const API_BASE_URL = "http://localhost:3000";
 
-// For Android emulator, use 10.0.2.2 to access host machine's localhost
-export const API_BASE_URL = "http://10.0.2.2:3000"; // Local API server for development
-
-// Setup axios interceptors and other config here if needed
-export const setupApiInterceptors = (token: string) => {
-  // This would configure axios with authentication headers
-  // Example:
-  // axios.interceptors.request.use((config) => {
-  //   config.headers.Authorization = `Bearer ${token}`;
-  //   return config;
-  // });
-};
+// You can add other configuration constants here if needed
+export const API_TIMEOUT = 10000;
+export const MAX_RETRY_ATTEMPTS = 3;

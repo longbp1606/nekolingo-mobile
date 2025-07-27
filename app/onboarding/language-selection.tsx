@@ -1,53 +1,54 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { Button } from "../../components";
 import { Colors, Sizes } from "../../constants";
-import { Language } from "../../services/languageService";
-import { AppDispatch, RootState } from "../../stores";
 import {
-  fetchLanguages,
-  setSelectedLanguageTo,
-} from "../../stores/languageSlice";
-import { setCurrentStep, setLanguage } from "../../stores/onboardingSlice";
-import { updateUserSettings } from "../../stores/userSlice";
+  Language,
+  useGetLanguagesForOnboardingQuery,
+} from "../../services/languageApiService";
 
 export default function LanguageSelectionScreen() {
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
-  const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-
-  const { languages, loading, error } = useSelector(
-    (state: RootState) => state.language
+  const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(
+    null
   );
+  const router = useRouter();
 
-  useEffect(() => {
-    dispatch(fetchLanguages());
-  }, [dispatch]);
+  const {
+    data: languages,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useGetLanguagesForOnboardingQuery();
 
   const handleLanguageSelect = (language: Language) => {
-    setSelectedLanguage(language.code);
-    dispatch(setSelectedLanguageTo(language));
+    setSelectedLanguage(language);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedLanguage) {
-      // Update user's selected language in Redux
-      dispatch(updateUserSettings({ selectedLanguage }));
-      dispatch(setLanguage(selectedLanguage));
-      dispatch(setCurrentStep(4));
+      try {
+        // Store the complete selected language object
+        await AsyncStorage.setItem(
+          "selectedLanguage",
+          JSON.stringify(selectedLanguage)
+        );
 
-      // Navigate to source selection
-      router.push("/onboarding/source-selection" as any);
+        // Navigate to register screen directly (simplified onboarding)
+        router.push("/onboarding/register" as any);
+      } catch (error) {
+        console.error("Error saving language:", error);
+      }
     }
   };
 
@@ -55,22 +56,27 @@ export default function LanguageSelectionScreen() {
     <TouchableOpacity
       style={[
         styles.languageItem,
-        selectedLanguage === item.code && styles.selectedLanguageItem,
+        selectedLanguage?._id === item._id && styles.selectedLanguageItem,
       ]}
       onPress={() => handleLanguageSelect(item)}
     >
-      <Text style={styles.languageFlag}>{item.flag || "🌐"}</Text>
+      {item.flag_url ? (
+        <Image
+          source={{ uri: item.flag_url }}
+          style={styles.languageFlagImage}
+          resizeMode="contain"
+        />
+      ) : (
+        <Text style={styles.languageFlag}>🌐</Text>
+      )}
       <Text
         style={[
           styles.languageName,
-          selectedLanguage === item.code && styles.selectedLanguageName,
+          selectedLanguage?._id === item._id && styles.selectedLanguageName,
         ]}
       >
         {item.name}
       </Text>
-      {item.native_name && item.native_name !== item.name && (
-        <Text style={styles.nativeName}>({item.native_name})</Text>
-      )}
     </TouchableOpacity>
   );
 
@@ -85,14 +91,14 @@ export default function LanguageSelectionScreen() {
     );
   }
 
-  if (error && languages.length === 0) {
+  if (error && (!languages || languages.length === 0)) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load languages</Text>
           <Button
             title="Retry"
-            onPress={() => dispatch(fetchLanguages())}
+            onPress={() => refetch()}
             style={styles.retryButton}
           />
         </View>
@@ -108,7 +114,7 @@ export default function LanguageSelectionScreen() {
       </View>
 
       <FlatList
-        data={languages}
+        data={languages || []}
         keyExtractor={(item) => item._id}
         renderItem={renderLanguageItem}
         style={styles.languageList}
@@ -173,6 +179,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginRight: Sizes.md,
   },
+  languageFlagImage: {
+    width: 28,
+    height: 20,
+    marginRight: Sizes.md,
+  },
   languageName: {
     fontSize: Sizes.h4,
     fontWeight: "600",
@@ -182,12 +193,6 @@ const styles = StyleSheet.create({
   selectedLanguageName: {
     color: Colors.primary,
     fontWeight: "bold",
-  },
-  nativeName: {
-    fontSize: Sizes.caption,
-    color: Colors.textLight,
-    fontStyle: "italic",
-    marginLeft: Sizes.xs,
   },
   loadingContainer: {
     flex: 1,
