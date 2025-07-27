@@ -68,23 +68,36 @@ const createUnitsFromCourseMetadata = (
           }
         }
 
-        // Choose icon based on lesson index
-        const icons = [
-          "star",
-          "checkmark-circle",
-          "book",
-          "trophy",
-          "flag",
-          "school",
-          "barbell",
-        ];
-        const icon = icons[lessonIndex % icons.length];
+        // Choose icon based on lesson type and mode
+        let icon = "star"; // default
+        if (lesson.mode === "personalized") {
+          icon = "sparkles"; // Special icon for AI-generated lessons
+        } else if (lesson.type?.includes("vocabulary")) {
+          icon = "book";
+        } else if (lesson.type?.includes("grammar")) {
+          icon = "school";
+        } else if (lesson.type?.includes("reading")) {
+          icon = "document-text";
+        } else {
+          const icons = ["star", "checkmark-circle", "trophy", "flag"];
+          icon = icons[lessonIndex % icons.length];
+        }
+
+        // Truncate long lesson titles for better display
+        const displayTitle =
+          lesson.title.length > 35
+            ? lesson.title.substring(0, 32) + "..."
+            : lesson.title;
 
         return {
           icon: icon as any,
           status,
-          title: lesson.title,
+          title: displayTitle,
           lessonId: lesson._id,
+          xpReward: lesson.xp_reward,
+          lessonType: lesson.type,
+          mode: lesson.mode,
+          originalTitle: lesson.title, // Keep full title for modal/details
         };
       }) || [];
 
