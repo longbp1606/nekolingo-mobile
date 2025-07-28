@@ -286,14 +286,14 @@ const ProfileScreen: React.FC = () => {
               {user?.balance || 0} 💎
             </Text>
           </View>
-          <View style={styles.followSection}>
+          {/* <View style={styles.followSection}>
             <Text style={styles.followStats}>
               Đang theo dõi {followingList.length || 0}
             </Text>
             <Text style={styles.followStats}>
               {followersList.length || 0} Người theo dõi
             </Text>
-          </View>
+          </View> */}
         </View>
       </View>
     );
@@ -314,7 +314,7 @@ const ProfileScreen: React.FC = () => {
 
     return (
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Gem & Thống kê</Text>
+        {/* <Text style={styles.cardTitle}>Gem & Thống kê</Text> */}
         <View style={styles.gemBalance}>
           <Text style={styles.gemBalanceLabel}>Số dư Gem hiện tại</Text>
           <Text style={styles.gemAmount}>{user?.balance || 0} 💎</Text>
@@ -609,9 +609,9 @@ const ProfileScreen: React.FC = () => {
         }
       >
         {renderProfileHeader()}
-        {renderStatsCard()}
+        {/* {renderStatsCard()} */}
         {renderMainCard()}
-        {renderAddFriendsCard()}
+        {/* {renderAddFriendsCard()} */}
         {user && (user.id || user._id) && (
           <AchievementList
             userId={user.id || user._id || ""}
