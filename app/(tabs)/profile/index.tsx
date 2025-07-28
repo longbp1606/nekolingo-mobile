@@ -377,7 +377,7 @@ const ProfileScreen: React.FC = () => {
               NẠP GEM
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               styles.tabButton,
               activeTab === "transactions" && styles.tabButtonActive,
@@ -392,7 +392,7 @@ const ProfileScreen: React.FC = () => {
             >
               LỊCH SỬ
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View style={styles.tabContent}>
