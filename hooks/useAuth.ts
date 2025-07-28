@@ -108,5 +108,6 @@ export const useAuth = () => {
     login,
     register,
     logout: logoutUser,
+    refetchProfile, // Expose refetch to allow manual refresh
   };
 };

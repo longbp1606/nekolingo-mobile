@@ -43,19 +43,19 @@ export function VNPayWebView({
       const amount = urlParams.get("vnp_Amount");
 
       if (responseCode === "00") {
-        // Payment successful
+        // Payment successful - require user to click to return to profile
         Alert.alert(
           "Thanh toán thành công!",
-          `Bạn đã nạp thành công ${amount ? parseInt(amount) / 100 : 0}₫`,
+          `Bạn đã nạp thành công ${amount ? parseInt(amount) / 100 : 0}₫.`,
           [
             {
-              text: "OK",
+              text: "Quay về Profile",
               onPress: () => {
-                onPaymentSuccess();
                 onClose();
               },
             },
-          ]
+          ],
+          { cancelable: true } // Prevent dismissing without clicking button
         );
       } else {
         // Payment failed

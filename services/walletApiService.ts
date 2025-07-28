@@ -77,6 +77,7 @@ export class WalletUtils {
     if (amount >= 200_000) return 2800;
     if (amount >= 100_000) return 1300;
     if (amount >= 50_000) return 600;
+    if (amount >= 10_000) return 100;
     return Math.floor((amount * 10) / 1000); // 1.000₫ = 10 gem
   }
 
@@ -85,6 +86,14 @@ export class WalletUtils {
    */
   static getDepositOptions(): DepositOption[] {
     return [
+      {
+        amount: 10_000,
+        gems: 100,
+        bonus: 0,
+        displayAmount: "10.000₫",
+        displayGems: "100 gems",
+        popular: false,
+      },
       {
         amount: 50_000,
         gems: 600,
