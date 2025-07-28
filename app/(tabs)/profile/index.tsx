@@ -169,6 +169,14 @@ const ProfileScreen: React.FC = () => {
       userData.currentLevel ||
       userData.level ||
       1;
+    const freezeCount =
+      (userData as any).freeze_count !== undefined
+        ? (userData as any).freeze_count
+        : userData.freezeCount || 0;
+    const isFreeze =
+      (userData as any).is_freeze !== undefined
+        ? (userData as any).is_freeze
+        : userData.isFreeze || false;
 
     console.log("User data debug:", {
       raw_user: userData,
@@ -177,9 +185,15 @@ const ProfileScreen: React.FC = () => {
       current_level: (userData as any).current_level,
       currentLevel: userData.currentLevel,
       xp: userData.xp,
+      freeze_count: (userData as any).freeze_count,
+      freezeCount: userData.freezeCount,
+      is_freeze: (userData as any).is_freeze,
+      isFreeze: userData.isFreeze,
       calculated_streak: streak,
       calculated_level: currentLevel,
       calculated_xp: totalXp,
+      calculated_freeze_count: freezeCount,
+      calculated_is_freeze: isFreeze,
     });
 
     return [
@@ -206,6 +220,18 @@ const ProfileScreen: React.FC = () => {
         label: "Cấp độ hiện tại",
         value: currentLevel.toString(),
         className: "trophy",
+      },
+      {
+        icon: require("../../../assets/images/star.png"),
+        label: "Freeze bảo vệ",
+        value: freezeCount === -1 ? "∞" : freezeCount.toString(),
+        className: "freeze",
+      },
+      {
+        icon: require("../../../assets/images/star-3d.png"),
+        label: "Trạng thái freeze",
+        value: isFreeze ? "Đang bảo vệ" : "Không hoạt động",
+        className: isFreeze ? "freeze-active" : "freeze-inactive",
       },
     ];
   };
@@ -254,6 +280,12 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.profileJoinDate}>
             {formatJoinDate(user.createdAt || user.created_at)}
           </Text>
+          <View style={styles.gemBalanceHeader}>
+            <Text style={styles.gemBalanceHeaderLabel}>Gems:</Text>
+            <Text style={styles.gemBalanceHeaderValue}>
+              {user?.balance || 0} 💎
+            </Text>
+          </View>
           <View style={styles.followSection}>
             <Text style={styles.followStats}>
               Đang theo dõi {followingList.length || 0}
@@ -271,6 +303,14 @@ const ProfileScreen: React.FC = () => {
     if (!user) return null;
 
     const stats = getStatsFromUser(user);
+    const freezeCount =
+      (user as any).freeze_count !== undefined
+        ? (user as any).freeze_count
+        : user.freezeCount || 0;
+    const isFreeze =
+      (user as any).is_freeze !== undefined
+        ? (user as any).is_freeze
+        : user.isFreeze || false;
 
     return (
       <View style={styles.card}>
@@ -279,6 +319,24 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.gemBalanceLabel}>Số dư Gem hiện tại</Text>
           <Text style={styles.gemAmount}>{user?.balance || 0} 💎</Text>
         </View>
+
+        {/* Freeze Status Info */}
+        {(freezeCount > 0 || isFreeze) && (
+          <View style={styles.freezeStatusCard}>
+            <Text style={styles.freezeStatusTitle}>
+              🛡️ Trạng thái Freeze Protection
+            </Text>
+            <Text style={styles.freezeStatusText}>
+              {isFreeze
+                ? "🟢 Streak của bạn đang được bảo vệ!"
+                : // : freezeCount === -1
+                // ? "⭐ Bạn có freeze bảo vệ không giới hạn"
+                freezeCount > 0
+                ? `⚡ Bạn có ${freezeCount} lần freeze bảo vệ`
+                : "❌ Không có freeze bảo vệ"}
+            </Text>
+          </View>
+        )}
       </View>
     );
   };
@@ -673,7 +731,26 @@ const styles = StyleSheet.create({
   profileJoinDate: {
     fontSize: 14,
     color: "#777",
-    marginBottom: 20,
+    marginBottom: 12,
+  },
+
+  gemBalanceHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    justifyContent: "center",
+  },
+
+  gemBalanceHeaderLabel: {
+    fontSize: 14,
+    color: "white",
+    marginRight: 8,
+  },
+
+  gemBalanceHeaderValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFD700",
   },
 
   followSection: {
@@ -710,14 +787,14 @@ const styles = StyleSheet.create({
   },
 
   statCard: {
-    width: "48%",
+    width: "32%",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: "#e5e5e5",
-    marginBottom: 16,
+    marginBottom: 12,
     backgroundColor: "#fff",
   },
 
@@ -734,16 +811,18 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: "#4B4B4B",
-    lineHeight: 26,
+    lineHeight: 24,
+    textAlign: "center",
   },
 
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#777",
-    lineHeight: 16,
+    lineHeight: 14,
+    textAlign: "center",
   },
 
   // Tabs
@@ -888,6 +967,29 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#4CAF50",
+  },
+
+  // Freeze status card
+  freezeStatusCard: {
+    backgroundColor: "#f0f8ff",
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#00C2D1",
+  },
+
+  freezeStatusTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 6,
+  },
+
+  freezeStatusText: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
   },
   depositContent: {
     paddingTop: 16,
