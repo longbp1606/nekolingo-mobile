@@ -5,7 +5,13 @@ import { API_BASE_URL } from "./config";
 
 async function getToken(): Promise<string | null> {
   try {
-    return await AsyncStorage.getItem("userToken");
+    // Try the correct auth token key first
+    let token = await AsyncStorage.getItem("auth_token");
+    if (!token) {
+      // Fallback to legacy userToken key
+      token = await AsyncStorage.getItem("userToken");
+    }
+    return token;
   } catch (error) {
     console.error("[getToken] Error:", error);
     return null;
@@ -55,8 +61,14 @@ export const userService = {
         );
         const detailResponse = await response.json();
 
-        console.log("[getUserProfile] Detail response from API:", detailResponse);
-        console.log("[getUserProfile] User data from API:", detailResponse.data?.user);
+        console.log(
+          "[getUserProfile] Detail response from API:",
+          detailResponse
+        );
+        console.log(
+          "[getUserProfile] User data from API:",
+          detailResponse.data?.user
+        );
 
         // The key fix: properly map snake_case API fields to camelCase
         const apiUserData = detailResponse.data?.user || {};
@@ -120,7 +132,10 @@ export const userService = {
           ...detailResponse.data,
         };
 
-        console.log("[getUserProfile] Combined user data:", combinedUserData.user);
+        console.log(
+          "[getUserProfile] Combined user data:",
+          combinedUserData.user
+        );
         await StorageUtils.saveUserSession(combinedUserData.user, token);
         return combinedUserData;
       }
@@ -191,7 +206,10 @@ export const userService = {
       );
       const detailResponse = await response.json();
 
-      console.log("[refreshUserProfile] Detail response from API:", detailResponse);
+      console.log(
+        "[refreshUserProfile] Detail response from API:",
+        detailResponse
+      );
 
       const apiUserData = detailResponse.data?.user || {};
 
@@ -254,7 +272,10 @@ export const userService = {
         ...detailResponse.data,
       };
 
-      console.log("[refreshUserProfile] Combined user data:", combinedUserData.user);
+      console.log(
+        "[refreshUserProfile] Combined user data:",
+        combinedUserData.user
+      );
       await StorageUtils.saveUserSession(combinedUserData.user, token);
       return combinedUserData;
     } catch (error) {
