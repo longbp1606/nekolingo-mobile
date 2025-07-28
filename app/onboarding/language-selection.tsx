@@ -18,9 +18,19 @@ import {
   useGetLanguagesForOnboardingQuery,
 } from "../../services/languageApiService";
 
+// Flag emoji fallbacks for each language
+const FLAG_FALLBACKS: { [key: string]: string } = {
+  vi: "🇻🇳", // Vietnamese
+  en: "🇬🇧", // English
+  jp: "🇯🇵", // Japanese
+};
+
 export default function LanguageSelectionScreen() {
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(
     null
+  );
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>(
+    {}
   );
   const router = useRouter();
 
@@ -52,33 +62,50 @@ export default function LanguageSelectionScreen() {
     }
   };
 
-  const renderLanguageItem = ({ item }: { item: Language }) => (
-    <TouchableOpacity
-      style={[
-        styles.languageItem,
-        selectedLanguage?._id === item._id && styles.selectedLanguageItem,
-      ]}
-      onPress={() => handleLanguageSelect(item)}
-    >
-      {item.flag_url ? (
-        <Image
-          source={{ uri: item.flag_url }}
-          style={styles.languageFlagImage}
-          resizeMode="contain"
-        />
-      ) : (
-        <Text style={styles.languageFlag}>🌐</Text>
-      )}
-      <Text
+  const renderLanguageItem = ({ item }: { item: Language }) => {
+    const shouldShowImage = item.flag_url && !imageErrors[item._id];
+    const fallbackFlag = FLAG_FALLBACKS[item.code] || "🌐";
+
+    return (
+      <TouchableOpacity
         style={[
-          styles.languageName,
-          selectedLanguage?._id === item._id && styles.selectedLanguageName,
+          styles.languageItem,
+          selectedLanguage?._id === item._id && styles.selectedLanguageItem,
         ]}
+        onPress={() => handleLanguageSelect(item)}
       >
-        {item.name}
-      </Text>
-    </TouchableOpacity>
-  );
+        {shouldShowImage ? (
+          <Image
+            source={{ uri: item.flag_url }}
+            style={styles.languageFlagImage}
+            resizeMode="contain"
+            onError={(error) => {
+              console.log(
+                "Image load error for",
+                item.name,
+                ":",
+                error.nativeEvent.error
+              );
+              setImageErrors((prev) => ({ ...prev, [item._id]: true }));
+            }}
+            onLoad={() => {
+              console.log("Image loaded successfully for", item.name);
+            }}
+          />
+        ) : (
+          <Text style={styles.languageFlag}>{fallbackFlag}</Text>
+        )}
+        <Text
+          style={[
+            styles.languageName,
+            selectedLanguage?._id === item._id && styles.selectedLanguageName,
+          ]}
+        >
+          {item.name}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -176,13 +203,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary + "10", // 10% opacity
   },
   languageFlag: {
-    fontSize: 28,
+    fontSize: 32,
     marginRight: Sizes.md,
+    textAlign: "center",
+    minWidth: 40,
   },
   languageFlagImage: {
-    width: 28,
-    height: 20,
+    width: 40,
+    height: 28,
     marginRight: Sizes.md,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   languageName: {
     fontSize: Sizes.h4,
