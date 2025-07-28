@@ -74,7 +74,14 @@ export const clearAuthData = createAsyncThunk(
   "auth/clearAuthData",
   async (_, { rejectWithValue }) => {
     try {
-      await AsyncStorage.removeItem(TOKEN_KEY);
+      // Clear all authentication and user data
+      await AsyncStorage.multiRemove([
+        TOKEN_KEY,
+        "userId",
+        "userToken",
+        "userData",
+        "onboarding_completed", // Reset onboarding to show welcome screens again
+      ]);
       return null;
     } catch (error: any) {
       console.error("Failed to clear auth data:", error);

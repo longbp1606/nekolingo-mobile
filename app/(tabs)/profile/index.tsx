@@ -674,7 +674,7 @@ const ProfileScreen: React.FC = () => {
         {/* {renderStatsCard()} */}
         {renderMainCard()}
         {/* {renderAddFriendsCard()} */}
-        {user && (user.id || user._id) && (
+        {isAuthenticated && user && (user.id || user._id) && (
           <AchievementList
             userId={user.id || user._id || ""}
             userStats={{

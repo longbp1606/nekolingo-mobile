@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../config/store";
@@ -18,6 +19,7 @@ import {
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const authState = useSelector((state: RootState) => state.auth);
+  const router = useRouter();
 
   const [loginMutation] = useLoginMutation();
   const [registerMutation] = useRegisterMutation();
@@ -85,13 +87,17 @@ export const useAuth = () => {
 
   const logoutUser = async () => {
     try {
-      // Clear auth data from AsyncStorage and Redux
+      // Clear all auth data, user data, and reset onboarding status
       await dispatch(clearAuthData()).unwrap();
       dispatch(logout());
+
+      // Navigate back to onboarding/welcome screens
+      router.replace("/onboarding");
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if clearing storage fails, logout from Redux
+      // Even if clearing storage fails, logout from Redux and navigate
       dispatch(logout());
+      router.replace("/onboarding");
     }
   };
 

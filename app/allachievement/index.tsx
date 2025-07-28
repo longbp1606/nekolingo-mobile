@@ -48,11 +48,11 @@ const AllAchievement: React.FC = () => {
   }
 
   const getUserId = (user: any): string | null => {
-    if (user.id && typeof user.id === 'string') return user.id;
+    if (user.id && typeof user.id === "string") return user.id;
 
-    if (user._id && typeof user._id === 'string') return user._id;
-    if (user.userId && typeof user.userId === 'string') return user.userId;
-    if (user.user_id && typeof user.user_id === 'string') return user.user_id;
+    if (user._id && typeof user._id === "string") return user._id;
+    if (user.userId && typeof user.userId === "string") return user.userId;
+    if (user.user_id && typeof user.user_id === "string") return user.user_id;
 
     return null;
   };
@@ -68,13 +68,19 @@ const AllAchievement: React.FC = () => {
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Không tìm thấy ID người dùng</Text>
           <Text style={styles.debugText}>
-            Các trường có sẵn: {user ? Object.keys(user).join(', ') : 'Không có user'}
+            Các trường có sẵn:{" "}
+            {user ? Object.keys(user).join(", ") : "Không có user"}
           </Text>
           <Text style={styles.debugText}>
-            ID fields: {JSON.stringify({
-              id: user?.id,
-              _id: user?._id,
-            }, null, 2)}
+            ID fields:{" "}
+            {JSON.stringify(
+              {
+                id: user?.id,
+                _id: user?._id,
+              },
+              null,
+              2
+            )}
           </Text>
           <TouchableOpacity style={styles.button} onPress={() => router.back()}>
             <Text style={styles.buttonText}>Quay lại</Text>
@@ -86,11 +92,11 @@ const AllAchievement: React.FC = () => {
 
   const userStats = {
     xp: user.xp ?? user.total_xp ?? 0,
-    completed_lessons: 0, 
-    completed_courses: 0, 
+    completed_lessons: 0,
+    completed_courses: 0,
     has_practiced: (user.xp ?? user.total_xp ?? 0) > 0,
     streak_days: user.streakDays ?? user.current_streak ?? 0,
-    perfect_lessons: 0, 
+    perfect_lessons: 0,
     currentLevel: user.currentLevel ?? user.level ?? 1,
   };
 
@@ -103,12 +109,13 @@ const AllAchievement: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-
-          <AchievementList
-            userId={userId}
-            userStats={userStats}
-            showViewAll={false}
-          />
+          {isAuthenticated && userId && (
+            <AchievementList
+              userId={userId}
+              userStats={userStats}
+              showViewAll={false}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -138,24 +145,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   debugContainer: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
     padding: 12,
     borderRadius: 8,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    borderLeftColor: "#007AFF",
   },
   debugTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: '#007AFF',
+    color: "#007AFF",
     marginBottom: 8,
   },
   debugText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginBottom: 4,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
   },
   backButtonGradient: {
     position: "absolute",
