@@ -5,18 +5,48 @@ import { Colors, Sizes } from "../constants";
 
 interface BottomNavItem {
   id: string;
-  icon: any; 
+  icon: any;
   label: string;
   route: string;
 }
 
 const navItems: BottomNavItem[] = [
-  { id: "home", icon: require("../assets/images/house-cleaning.png"), label: "Home", route: "/(tabs)/home" },
-  { id: "streak", icon: require("../assets/images/reward.png"), label: "Streak", route: "/(tabs)/streak" },
-  { id: "exercise", icon: require("../assets/images/homework.png"), label: "Exercise", route: "/(tabs)/exercise" },
-  { id: "leaderboard", icon: require("../assets/images/trophy.png"), label: "Leaderboard", route: "/(tabs)/leaderboard" },
-  { id: "membership", icon: require("../assets/images/subscription.png"), label: "Plus", route: "/(tabs)/membership" },
-  { id: "profile", icon: require("../assets/images/user.png"), label: "Profile", route: "/(tabs)/profile" },
+  {
+    id: "home",
+    icon: require("../assets/images/house-cleaning.png"),
+    label: "Home",
+    route: "/(tabs)/home",
+  },
+  {
+    id: "streak",
+    icon: require("../assets/images/reward.png"),
+    label: "Streak",
+    route: "/(tabs)/streak",
+  },
+  {
+    id: "exercise",
+    icon: require("../assets/images/homework.png"),
+    label: "Exercise",
+    route: "/(tabs)/exercise",
+  },
+  {
+    id: "leaderboard",
+    icon: require("../assets/images/trophy.png"),
+    label: "Leaderboard",
+    route: "/(tabs)/leaderboard",
+  },
+  {
+    id: "shop",
+    icon: require("../assets/images/subscription.png"),
+    label: "Shop",
+    route: "/(tabs)/shop",
+  },
+  {
+    id: "profile",
+    icon: require("../assets/images/user.png"),
+    label: "Profile",
+    route: "/(tabs)/profile",
+  },
 ];
 
 export default function BottomNavigation() {

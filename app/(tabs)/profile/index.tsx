@@ -16,8 +16,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AchievementList from "../../../components/AchievementList";
 import PopupInvite from "../../../components/PopupInvite";
+import {
+  DepositHeader,
+  DepositOption,
+  VNPayWebView,
+} from "../../../components/membership";
 import { useAuth } from "../../../hooks/useAuth";
 import { User } from "../../../services/auth/authApiService";
+import {
+  Transaction,
+  useCreateDepositMutation,
+  useGetTransactionHistoryQuery,
+  WalletUtils,
+} from "../../../services/walletApiService";
 
 const { width } = Dimensions.get("window");
 
@@ -56,25 +67,83 @@ const formatJoinDate = (dateString: string | undefined): string => {
 };
 
 const getLeague = (xp: number): string => {
-  if (xp < 500) return 'Đồng';
-  if (xp < 1999) return 'Bạc';
-  if (xp < 9999) return 'Vàng';
-  return 'Kim Cương';
+  if (xp < 500) return "Đồng";
+  if (xp < 1999) return "Bạc";
+  if (xp < 9999) return "Vàng";
+  return "Kim Cương";
 };
 
 const ProfileScreen: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"following" | "followers">(
-    "following"
-  );
+  const [createDeposit, { isLoading: isCreatingDeposit }] =
+    useCreateDepositMutation();
+  const {
+    data: transactions,
+    isLoading: isLoadingTransactions,
+    refetch: refetchTransactions,
+  } = useGetTransactionHistoryQuery();
+  const [activeTab, setActiveTab] = useState<
+    "stats" | "deposit" | "transactions"
+  >("stats");
   const [showPopup, setShowPopup] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [followingList, setFollowingList] = useState<FollowUser[]>([]);
   const [followersList, setFollowersList] = useState<FollowUser[]>([]);
+  const [webViewVisible, setWebViewVisible] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState("");
 
   const handleRefresh = async (): Promise<void> => {
     setRefreshing(true);
+    await refetchTransactions();
     setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  const handleDeposit = async (amount: number) => {
+    if (isCreatingDeposit) return;
+
+    try {
+      console.log("Creating deposit for amount:", amount);
+      const response = await createDeposit({ amount }).unwrap();
+
+      if (response.url) {
+        setPaymentUrl(response.url);
+        setWebViewVisible(true);
+      } else {
+        Alert.alert("Lỗi", "Không thể tạo thanh toán");
+      }
+    } catch (error: any) {
+      console.error("Error creating deposit:", error);
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Có lỗi xảy ra khi tạo thanh toán";
+      Alert.alert("Lỗi", errorMessage);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    Alert.alert(
+      "Thành công!",
+      "Thanh toán đã được xử lý thành công. Số dư gem của bạn sẽ được cập nhật trong vài phút.",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            refetchTransactions();
+            setActiveTab("stats");
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePaymentError = (error: string) => {
+    Alert.alert("Thanh toán thất bại", error);
+  };
+
+  const handleCloseWebView = () => {
+    setWebViewVisible(false);
+    setPaymentUrl("");
   };
 
   const handleLogout = () => {
@@ -89,9 +158,17 @@ const ProfileScreen: React.FC = () => {
   };
 
   const getStatsFromUser = (userData: User): StatItem[] => {
-    const streak = (userData as any).streak_days || userData.streakDays || userData.current_streak || 0;
+    const streak =
+      (userData as any).streak_days ||
+      userData.streakDays ||
+      userData.current_streak ||
+      0;
     const totalXp = userData.xp || userData.total_xp || 0;
-    const currentLevel = (userData as any).current_level || userData.currentLevel || userData.level || 1;
+    const currentLevel =
+      (userData as any).current_level ||
+      userData.currentLevel ||
+      userData.level ||
+      1;
 
     console.log("User data debug:", {
       raw_user: userData,
@@ -102,7 +179,7 @@ const ProfileScreen: React.FC = () => {
       xp: userData.xp,
       calculated_streak: streak,
       calculated_level: currentLevel,
-      calculated_xp: totalXp
+      calculated_xp: totalXp,
     });
 
     return [
@@ -134,10 +211,10 @@ const ProfileScreen: React.FC = () => {
   };
 
   const getLeague = (xp: number): string => {
-    if (xp < 500) return 'Đồng';
-    if (xp < 1999) return 'Bạc';
-    if (xp < 9999) return 'Vàng';
-    return 'Kim Cương';
+    if (xp < 500) return "Đồng";
+    if (xp < 1999) return "Bạc";
+    if (xp < 9999) return "Vàng";
+    return "Kim Cương";
   };
 
   const renderProfileHeader = (): ReactElement | null => {
@@ -197,93 +274,223 @@ const ProfileScreen: React.FC = () => {
 
     return (
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Thống kê</Text>
-        <View style={styles.statsGrid}>
-          {stats.map((stat: StatItem, index: number) => (
-            <View key={index} style={styles.statCard}>
-              <Image source={stat.icon} style={styles.statImg} />
-              <View style={styles.statInfo}>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </View>
-            </View>
-          ))}
+        <Text style={styles.cardTitle}>Gem & Thống kê</Text>
+        <View style={styles.gemBalance}>
+          <Text style={styles.gemBalanceLabel}>Số dư Gem hiện tại</Text>
+          <Text style={styles.gemAmount}>{user?.balance || 0} 💎</Text>
         </View>
       </View>
     );
   };
 
-  const renderFollowCard = (): ReactElement => {
-    const currentList =
-      activeTab === "following" ? followingList : followersList;
-    const hasData = currentList && currentList.length > 0;
-
+  const renderMainCard = (): ReactElement => {
     return (
       <View style={styles.card}>
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[
               styles.tabButton,
-              activeTab === "following" && styles.tabButtonActive,
+              activeTab === "stats" && styles.tabButtonActive,
             ]}
-            onPress={() => setActiveTab("following")}
+            onPress={() => setActiveTab("stats")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "following" && styles.tabTextActive,
+                activeTab === "stats" && styles.tabTextActive,
               ]}
             >
-              ĐANG THEO DÕI
+              THỐNG KÊ
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.tabButton,
-              activeTab === "followers" && styles.tabButtonActive,
+              activeTab === "deposit" && styles.tabButtonActive,
             ]}
-            onPress={() => setActiveTab("followers")}
+            onPress={() => setActiveTab("deposit")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "followers" && styles.tabTextActive,
+                activeTab === "deposit" && styles.tabTextActive,
               ]}
             >
-              NGƯỜI THEO DỖI
+              NẠP GEM
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "transactions" && styles.tabButtonActive,
+            ]}
+            onPress={() => setActiveTab("transactions")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "transactions" && styles.tabTextActive,
+              ]}
+            >
+              LỊCH SỬ
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.tabContent}>
-          {hasData ? (
-            <View style={styles.followList}>
-              {currentList.map((item, index) => (
-                <View key={index} style={styles.followItem}>
-                  <Text>{item.name || item.username || item.email}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <>
-              <Image
-                source={
-                  activeTab === "following"
-                    ? require("../../../assets/images/following.gif")
-                    : require("../../../assets/images/addfriend.gif")
-                }
-                style={styles.emptyImage}
-              />
-              <Text style={styles.emptyMessage}>
-                {activeTab === "following"
-                  ? "Kết nối bạn bè giúp học vui và hiệu quả hơn."
-                  : "Chưa có người theo dõi"}
-              </Text>
-            </>
-          )}
+          {activeTab === "stats" && renderStatsContent()}
+          {activeTab === "deposit" && renderDepositContent()}
+          {activeTab === "transactions" && renderTransactionContent()}
         </View>
       </View>
     );
+  };
+
+  const renderStatsContent = (): ReactElement | null => {
+    if (!user) return null;
+
+    const stats = getStatsFromUser(user);
+
+    return (
+      <View style={styles.statsGrid}>
+        {stats.map((stat: StatItem, index: number) => (
+          <View key={index} style={styles.statCard}>
+            <Image source={stat.icon} style={styles.statImg} />
+            <View style={styles.statInfo}>
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statLabel}>{stat.label}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderDepositContent = (): ReactElement => {
+    const depositOptions = WalletUtils.getDepositOptions();
+
+    return (
+      <View style={styles.depositContent}>
+        <DepositHeader
+          currentBalance={user?.balance || 0}
+          title="Số dư hiện tại"
+          subtitle="CHỌN GÓI NẠP PHÙ HỢP"
+        />
+
+        <View style={styles.depositOptions}>
+          {depositOptions.map((option) => (
+            <DepositOption
+              key={option.amount}
+              amount={option.amount}
+              gems={option.gems}
+              bonus={option.bonus}
+              displayAmount={option.displayAmount}
+              displayGems={option.displayGems}
+              popular={option.popular}
+              onPress={() => handleDeposit(option.amount)}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderTransactionContent = (): ReactElement => {
+    if (isLoadingTransactions) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00C2D1" />
+          <Text style={styles.loadingText}>Đang tải lịch sử...</Text>
+        </View>
+      );
+    }
+
+    if (!transactions || transactions.length === 0) {
+      return (
+        <View style={styles.emptyTransactions}>
+          <Image
+            source={require("../../../assets/images/chest.png")}
+            style={styles.emptyImage}
+          />
+          <Text style={styles.emptyMessage}>Chưa có giao dịch nào</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.transactionsList}>
+        {transactions.slice(0, 5).map((transaction: Transaction) => (
+          <View key={transaction._id} style={styles.transactionItem}>
+            <View style={styles.transactionHeader}>
+              <Text style={styles.transactionCode}>
+                {transaction.transaction_code}
+              </Text>
+              <Text
+                style={[
+                  styles.transactionStatus,
+                  { color: getTransactionStatusColor(transaction.status) },
+                ]}
+              >
+                {getTransactionStatusText(transaction.status)}
+              </Text>
+            </View>
+            <View style={styles.transactionDetails}>
+              <Text style={styles.transactionAmount}>
+                {transaction.vnd_amount.toLocaleString("vi-VN")}₫
+              </Text>
+              <Text style={styles.transactionGems}>
+                +{transaction.gem_amount} 💎
+              </Text>
+            </View>
+            <Text style={styles.transactionDate}>
+              {new Date(transaction.createdAt).toLocaleDateString("vi-VN", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          </View>
+        ))}
+        {transactions.length > 5 && (
+          <TouchableOpacity
+            style={styles.viewAllButton}
+            onPress={() => {
+              // Navigate to full transaction history if needed
+            }}
+          >
+            <Text style={styles.viewAllText}>Xem tất cả</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  const getTransactionStatusColor = (status: string): string => {
+    switch (status) {
+      case "SUCCESS":
+        return "#4CAF50";
+      case "PENDING":
+        return "#FF9800";
+      case "FAILED":
+        return "#F44336";
+      default:
+        return "#666";
+    }
+  };
+
+  const getTransactionStatusText = (status: string): string => {
+    switch (status) {
+      case "SUCCESS":
+        return "Thành công";
+      case "PENDING":
+        return "Đang xử lý";
+      case "FAILED":
+        return "Thất bại";
+      default:
+        return status;
+    }
   };
 
   const renderAddFriendsCard = (): ReactElement => (
@@ -345,7 +552,7 @@ const ProfileScreen: React.FC = () => {
       >
         {renderProfileHeader()}
         {renderStatsCard()}
-        {renderFollowCard()}
+        {renderMainCard()}
         {renderAddFriendsCard()}
         {user && (user.id || user._id) && (
           <AchievementList
@@ -370,6 +577,14 @@ const ProfileScreen: React.FC = () => {
           />
         )}
       </ScrollView>
+
+      <VNPayWebView
+        visible={webViewVisible}
+        paymentUrl={paymentUrl}
+        onClose={handleCloseWebView}
+        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentError={handlePaymentError}
+      />
     </SafeAreaView>
   );
 };
@@ -654,6 +869,91 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     marginBottom: 20,
+  },
+
+  // Deposit and transaction styles
+  gemBalance: {
+    alignItems: "center",
+    paddingVertical: 16,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  gemBalanceLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+  },
+  gemAmount: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#4CAF50",
+  },
+  depositContent: {
+    paddingTop: 16,
+  },
+  depositOptions: {
+    marginTop: 16,
+  },
+  emptyTransactions: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  transactionsList: {
+    paddingTop: 16,
+  },
+  transactionItem: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  transactionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  transactionCode: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  transactionStatus: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  transactionDetails: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  transactionGems: {
+    fontSize: 14,
+    color: "#4CAF50",
+    fontWeight: "600",
+  },
+  transactionDate: {
+    fontSize: 12,
+    color: "#666",
+  },
+  viewAllButton: {
+    backgroundColor: "#00C2D1",
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  viewAllText: {
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "center",
+    fontSize: 14,
   },
 });
 

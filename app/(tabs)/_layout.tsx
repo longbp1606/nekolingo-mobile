@@ -15,7 +15,7 @@ export default function TabLayout() {
       <Tabs.Screen name="streak/index" />
       <Tabs.Screen name="exercise/index" />
       <Tabs.Screen name="leaderboard/index" />
-      <Tabs.Screen name="membership/index" />
+      <Tabs.Screen name="shop/index" />
       <Tabs.Screen name="profile/index" />
     </Tabs>
   );
