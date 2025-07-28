@@ -21,6 +21,23 @@ export interface User {
   currentTopic: string;
   currentLesson: string;
   createdAt: string;
+  
+  // Snake case fields from actual API response
+  current_level?: number;
+  weekly_xp?: number;
+  streak_days?: number;
+  backup_streak_days?: number;
+  is_freeze?: boolean;
+  freeze_count?: number;
+  language_from?: string;
+  language_to?: string;
+  is_premiere?: boolean;
+  is_active?: boolean;
+  double_or_nothing?: boolean;
+  current_course?: string;
+  current_topic?: string;
+  current_lesson?: string;
+  
   // Legacy fields for backward compatibility
   _id?: string;
   full_name?: string;
@@ -33,6 +50,8 @@ export interface User {
   learning_language?: string;
   created_at?: string;
   updated_at?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 export interface LoginRequest {

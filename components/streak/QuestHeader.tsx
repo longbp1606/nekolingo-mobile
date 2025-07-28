@@ -1,7 +1,6 @@
 import { FontAwesome } from "@expo/vector-icons";
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { QuestMission } from "./QuestMission";
 
 interface QuestHeaderProps {
   title: string;
@@ -23,7 +22,10 @@ export function QuestHeader({
           <Text style={styles.monthLabel}>THÁNG BẢY</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
-
+          <View style={styles.timeContainer}>
+            <Text style={styles.timeIcon}><FontAwesome name="clock-o" size={18} color="#FFF" /></Text>
+            <Text style={styles.timeText}>{timeRemaining}</Text>
+          </View>
 
         </View>
 
@@ -39,7 +41,7 @@ export function QuestHeader({
         )}
 
       </View>
-      <QuestMission
+      {/* <QuestMission
         title="Kiếm 30 Điểm nhiệm vụ"
         subtitle=""
         progress={15}
@@ -48,11 +50,8 @@ export function QuestHeader({
         style={{
           paddingRight: 20, paddingLeft: 20, marginLeft: 0, marginRight: 0,
         }}
-      />
-      <View style={styles.timeContainer}>
-        <Text style={styles.timeIcon}><FontAwesome name="clock-o" size={18} color="#FFF" /></Text>
-        <Text style={styles.timeText}>{timeRemaining}</Text>
-      </View>
+      /> */}
+
     </View>
   );
 }
@@ -95,12 +94,10 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: "#FFFFFF",
-    marginBottom: 8,
   },
   timeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10,
   },
   timeIcon: {
     fontSize: 16,
