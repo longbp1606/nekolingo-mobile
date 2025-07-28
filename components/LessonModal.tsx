@@ -217,11 +217,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
                   { color: modalStyle.buttonTextColor },
                 ]}
               >
-                {lesson.lessonId
-                  ? `ÔN TẬP +${Math.floor((lesson.xpReward || 25) * 0.2)} XP`
-                  : `DEMO - ÔN TẬP +${Math.floor(
-                      (lesson.xpReward || 25) * 0.2
-                    )} XP`}
+                ÔN TẬP
               </Text>
             </TouchableOpacity>
           </View>
