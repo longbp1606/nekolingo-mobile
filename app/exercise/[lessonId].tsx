@@ -270,8 +270,7 @@ export default function ExerciseScreen() {
       const exerciseAnswer: ExerciseAnswer = {
         exercise_id: currentExercise._id,
         user_answer: userAnswerForAPI,
-        is_correct: isCorrect,
-        time_taken: answerTime,
+        answer_time: answerTime,
       };
 
       console.log("Tracking exercise:", {
@@ -327,8 +326,9 @@ export default function ExerciseScreen() {
 
     const userId = (user.id || user._id) as string; // Safe cast since we checked above
     const apiPayload = {
+      user_id: userId,
       lesson_id: lessonId || "",
-      exercise_answers: exerciseProgress,
+      exercises: exerciseProgress,
     };
 
     try {

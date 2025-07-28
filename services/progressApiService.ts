@@ -1,16 +1,16 @@
 import { apiSlice } from "./apiSlice";
 
-// Types for exercise progress
+// Types for exercise progress - matching backend DTO
 export interface ExerciseAnswer {
   exercise_id: string;
   user_answer: string | string[] | number | object;
-  is_correct: boolean;
-  time_taken: number; // in seconds
+  answer_time?: number; // in seconds (optional in backend)
 }
 
 export interface CompleteFullLessonRequest {
+  user_id: string;
   lesson_id: string;
-  exercise_answers: ExerciseAnswer[];
+  exercises: ExerciseAnswer[];
 }
 
 export interface ExplainAnswerRequest {
