@@ -1,0 +1,22 @@
+import { Tabs } from "expo-router";
+import React from "react";
+import { BottomNavigation } from "../../components";
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { display: "none" }, // Hide default tab bar since we're using custom BottomNavigation
+      }}
+      tabBar={() => <BottomNavigation />} // Use our custom bottom navigation
+    >
+      <Tabs.Screen name="home/index" />
+      <Tabs.Screen name="streak/index" />
+      <Tabs.Screen name="exercise/index" />
+      <Tabs.Screen name="leaderboard/index" />
+      <Tabs.Screen name="shop/index" />
+      <Tabs.Screen name="profile/index" />
+    </Tabs>
+  );
+}
