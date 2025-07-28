@@ -49,8 +49,6 @@ export const storeAuthData = createAsyncThunk(
   "auth/storeAuthData",
   async (authData: AuthData, { rejectWithValue }) => {
     try {
-      console.log("Storing auth data:", JSON.stringify(authData, null, 2));
-
       // Validate required fields
       if (!authData.accessToken) {
         const error =

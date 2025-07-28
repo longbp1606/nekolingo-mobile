@@ -9,7 +9,6 @@ export const useOnboardingCheck = () => {
     const checkOnboardingStatus = async () => {
       try {
         const completed = await AsyncStorage.getItem("onboarding_completed");
-        console.log("AsyncStorage onboarding_completed:", completed);
         setIsCompleted(completed === "true");
         setIsLoaded(true);
       } catch (error) {

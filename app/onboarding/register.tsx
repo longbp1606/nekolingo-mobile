@@ -115,7 +115,6 @@ export default function OnboardingRegisterScreen() {
       // Step 6: Navigate to home
       router.push("/(tabs)/home" as any);
     } catch (error: any) {
-      console.log("Registration failed", error);
       const errorMessage =
         error?.data?.message || "Registration failed. Please try again.";
       setValidationError(errorMessage);

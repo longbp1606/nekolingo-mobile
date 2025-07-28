@@ -43,7 +43,6 @@ export const useAuth = () => {
   const login = async (credentials: LoginRequest) => {
     try {
       const result = await loginMutation(credentials).unwrap();
-      console.log("Login API Response:", JSON.stringify(result, null, 2));
 
       // Check if result has the required fields
       if (!result.data?.accessToken) {

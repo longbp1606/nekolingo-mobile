@@ -1,20 +1,9 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { useSelector } from "react-redux";
 import { RootState } from "../config/store";
 import { Colors, Sizes } from "../constants";
 import { useOnboardingCheck } from "../hooks/useOnboardingCheck";
-
-// Debug function to clear AsyncStorage and reset onboarding
-const clearAsyncStorage = async () => {
-  try {
-    await AsyncStorage.clear();
-    console.log("AsyncStorage cleared! App will restart onboarding flow.");
-  } catch (error) {
-    console.error("Error clearing AsyncStorage:", error);
-  }
-};
 
 export default function Index() {
   const { user, token, isInitialized } = useSelector(
@@ -35,14 +24,6 @@ export default function Index() {
 
   // Determine which screen to show based on auth state and onboarding
   const getInitialRoute = () => {
-    console.log("=== NAVIGATION DEBUG ===");
-    console.log("Token:", !!token);
-    console.log("Onboarding Completed:", onboardingCompleted);
-    console.log("Onboarding Loaded:", onboardingLoaded);
-    console.log("Is Initialized:", isInitialized);
-    console.log("User:", !!user);
-    console.log("========================");
-
     // NEW LOGIC: Onboarding first, then authentication
     // 1. If onboarding not completed -> go to onboarding (regardless of login status)
     if (!onboardingCompleted) {
