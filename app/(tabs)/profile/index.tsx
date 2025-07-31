@@ -55,44 +55,78 @@ const ProfileScreen: React.FC = () => {
     try {
       console.log("Creating deposit for amount:", amount);
       const response = await createDeposit({ amount }).unwrap();
+      console.log("Deposit response:", response);
 
       if (response.url) {
         setPaymentUrl(response.url);
         setWebViewVisible(true);
+        console.log("Opening payment URL:", response.url);
       } else {
-        Alert.alert("Lỗi", "Không thể tạo thanh toán");
+        Alert.alert("Lỗi", "Không thể tạo thanh toán. Vui lòng thử lại.");
+        console.error("No payment URL in response:", response);
       }
     } catch (error: any) {
       console.error("Error creating deposit:", error);
       const errorMessage =
         error?.data?.message ||
         error?.message ||
-        "Có lỗi xảy ra khi tạo thanh toán";
-      Alert.alert("Lỗi", errorMessage);
+        "Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.";
+      Alert.alert("Lỗi thanh toán", errorMessage);
     }
   };
 
   const handlePaymentSuccess = async () => {
-    // Refresh user profile to get updated balance
-    await refetchProfile();
-    await refetchTransactions();
+    // Refresh user profile and transactions to get updated data
+    try {
+      await Promise.all([refetchProfile(), refetchTransactions()]);
 
-    Alert.alert(
-      "Thành công!",
-      "Thanh toán đã được xử lý thành công. Số dư gem của bạn đã được cập nhật.",
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            setActiveTab("stats"); // Switch to stats tab to show updated balance
+      Alert.alert(
+        "Nạp tiền thành công!",
+        "Số dư gem của bạn đã được cập nhật. Cảm ơn bạn đã sử dụng dịch vụ!",
+        [
+          {
+            text: "Xem số dư",
+            onPress: () => {
+              setActiveTab("stats"); // Switch to stats tab to show updated balance
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error("Error refreshing profile after payment:", error);
+      Alert.alert(
+        "Thanh toán thành công",
+        "Thanh toán đã hoàn tất. Vui lòng kiểm tra lại số dư của bạn.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setActiveTab("stats");
+            },
+          },
+        ]
+      );
+    }
   };
 
   const handlePaymentError = (error: string) => {
-    Alert.alert("Thanh toán thất bại", error);
+    console.error("Payment error:", error);
+    Alert.alert(
+      "Thanh toán thất bại",
+      `${error}\n\nVui lòng thử lại hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp tục.`,
+      [
+        {
+          text: "Thử lại",
+          onPress: () => {
+            setActiveTab("deposit");
+          },
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]
+    );
   };
 
   const handleCloseWebView = () => {

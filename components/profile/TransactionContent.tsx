@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -40,6 +41,39 @@ const getTransactionStatusText = (status: string): string => {
   }
 };
 
+const formatTransactionCode = (code: string): string => {
+  // Show only last 8 characters for display
+  return code.length > 8 ? `...${code.slice(-8)}` : code;
+};
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 1) {
+    return `Hôm nay, ${date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  } else if (diffDays < 7) {
+    return date.toLocaleDateString("vi-VN", {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } else {
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+};
+
 const TransactionContent: React.FC<TransactionContentProps> = ({
   transactions,
   isLoadingTransactions,
@@ -61,6 +95,9 @@ const TransactionContent: React.FC<TransactionContentProps> = ({
           style={styles.emptyImage}
         />
         <Text style={styles.emptyMessage}>Chưa có giao dịch nào</Text>
+        <Text style={styles.emptySubMessage}>
+          Bạn chưa thực hiện giao dịch nạp tiền nào
+        </Text>
       </View>
     );
   }
@@ -71,7 +108,7 @@ const TransactionContent: React.FC<TransactionContentProps> = ({
         <View key={transaction._id} style={styles.transactionItem}>
           <View style={styles.transactionHeader}>
             <Text style={styles.transactionCode}>
-              {transaction.transaction_code}
+              {formatTransactionCode(transaction.transaction_code)}
             </Text>
             <Text
               style={[
@@ -90,25 +127,20 @@ const TransactionContent: React.FC<TransactionContentProps> = ({
               +{transaction.gem_amount} 💎
             </Text>
           </View>
+          <Text style={styles.transactionMessage}>{transaction.message}</Text>
           <Text style={styles.transactionDate}>
-            {new Date(transaction.createdAt).toLocaleDateString("vi-VN", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatDate(transaction.createdAt)}
           </Text>
         </View>
       ))}
       {transactions.length > 5 && (
         <TouchableOpacity
           style={styles.viewAllButton}
-          onPress={() => {
-            // Navigate to full transaction history if needed
-          }}
+          onPress={() => router.push("/transaction-history" as any)}
         >
-          <Text style={styles.viewAllText}>Xem tất cả</Text>
+          <Text style={styles.viewAllText}>
+            Xem tất cả ({transactions.length} giao dịch)
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -137,6 +169,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   emptyMessage: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emptySubMessage: {
     fontSize: 14,
     color: "#777",
     textAlign: "center",
@@ -181,6 +220,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4CAF50",
     fontWeight: "600",
+  },
+  transactionMessage: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
+    marginBottom: 4,
   },
   transactionDate: {
     fontSize: 12,

@@ -12,6 +12,7 @@ export const ROUTES = {
   LEADERBOARD: "/(tabs)/leaderboard",
   PROFILE: "/(tabs)/profile",
   ALLACHIEVEMENT: "/allachievement",
+  TRANSACTION_HISTORY: "/transaction-history",
 
   // Exercise Flow
   EXERCISE_RESULT: "/exercise/result",

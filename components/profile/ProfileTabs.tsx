@@ -44,8 +44,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           NẠP GEM
         </Text>
       </TouchableOpacity>
-      {/* Uncomment if you want to enable transactions tab */}
-      {/* <TouchableOpacity
+      <TouchableOpacity
         style={[
           styles.tabButton,
           activeTab === "transactions" && styles.tabButtonActive,
@@ -60,7 +59,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         >
           LỊCH SỬ
         </Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
     </View>
   );
 };

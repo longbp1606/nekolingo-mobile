@@ -35,7 +35,14 @@ export function VNPayWebView({
     setCurrentUrl(url);
 
     // Check if the URL indicates payment completion
-    if (url.includes("/payment/return") || url.includes("vnp_ResponseCode")) {
+    // Look specifically for the mobile return URL endpoint
+    if (
+      url.includes("/api/wallet/vnpay/return/mobile") ||
+      url.includes("/api/wallet/vnpay/return") ||
+      url.includes("vnp_ResponseCode") ||
+      url.includes("10.0.2.2:3000/api/wallet/vnpay/return") ||
+      url.includes("localhost:3000/api/wallet/vnpay/return")
+    ) {
       // Parse URL parameters to check payment status
       const urlParams = new URLSearchParams(url.split("?")[1]);
       const responseCode = urlParams.get("vnp_ResponseCode");
@@ -43,19 +50,21 @@ export function VNPayWebView({
       const amount = urlParams.get("vnp_Amount");
 
       if (responseCode === "00") {
-        // Payment successful - require user to click to return to profile
+        // Payment successful - the backend has automatically updated the user profile
+        const vndAmount = amount ? parseInt(amount) / 100 : 0;
         Alert.alert(
           "Thanh toán thành công!",
-          `Bạn đã nạp thành công ${amount ? parseInt(amount) / 100 : 0}₫.`,
+          `Bạn đã nạp thành công ${vndAmount.toLocaleString()}₫. Số dư gem của bạn đã được cập nhật tự động.`,
           [
             {
               text: "Quay về Profile",
               onPress: () => {
                 onClose();
+                onPaymentSuccess(); // This will refresh the profile and show updated balance
               },
             },
           ],
-          { cancelable: true } // Prevent dismissing without clicking button
+          { cancelable: false } // Prevent dismissing without clicking button
         );
       } else {
         // Payment failed
