@@ -33,6 +33,7 @@ export const apiSlice = createApi({
     "Achievement",
     "Transaction",
     "Shop",
+    "Quest",
   ],
   endpoints: () => ({}),
 });
