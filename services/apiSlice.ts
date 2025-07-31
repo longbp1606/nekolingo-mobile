@@ -3,7 +3,7 @@ import type { RootState } from "../config/store";
 
 // Define base query with auth
 const baseQuery = fetchBaseQuery({
-  baseUrl: "http://api.nekolingo.site/api",
+  baseUrl: "http://10.0.2.2:3000/api",
   prepareHeaders: (headers, { getState }) => {
     // Get token from auth state
     const state = getState() as RootState;
