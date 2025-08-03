@@ -1,9 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -12,34 +11,117 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../../hooks/useAuth";
+import { useGetProfileQuery } from "../../../services/auth/authApiService";
 import {
-  useGetCurrentUserRankQuery,
-  useGetTournamentLeaderboardsQuery,
+  useGetOverallLeaderboardQuery,
+  useGetWeeklyLeaderboardQuery,
 } from "../../../services/leaderboardApiService";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const LeaderboardScreen = () => {
-  const [selectedTournament, setSelectedTournament] = useState<
-    "bronze" | "silver" | "gold" | "diamond"
-  >("bronze");
+  const [selectedTab, setSelectedTab] = useState<"overall" | "weekly">(
+    "overall"
+  );
 
   const { user, isAuthenticated, isLoading } = useAuth();
 
   // RTK Query hooks
   const {
-    data: leaderboardData,
-    isLoading: loadingLeaderboard,
-    error: leaderboardError,
-    refetch: refetchLeaderboard,
-  } = useGetTournamentLeaderboardsQuery();
+    data: overallLeaderboard,
+    isLoading: loadingOverall,
+    error: overallError,
+    refetch: refetchOverall,
+  } = useGetOverallLeaderboardQuery();
 
-  const { data: userRank, isLoading: loadingUserRank } =
-    useGetCurrentUserRankQuery(user?.id || user?._id || "", {
-      skip: !user?.id && !user?._id,
-    });
+  const {
+    data: weeklyLeaderboard,
+    isLoading: loadingWeekly,
+    error: weeklyError,
+    refetch: refetchWeekly,
+  } = useGetWeeklyLeaderboardQuery();
+
+  const { data: profileData, isLoading: loadingProfile } = useGetProfileQuery();
 
   const [refreshing, setRefreshing] = useState(false);
+
+  // Helper function to transform leaderboard data
+  const transformLeaderboardData = (
+    data: any[] | undefined,
+    isWeekly = false
+  ) => {
+    if (!data) return [];
+
+    const sortedData = isWeekly
+      ? [...data].sort(
+          (a, b) => (b.user_id?.weekly_xp || 0) - (a.user_id?.weekly_xp || 0)
+        )
+      : [...data].sort((a, b) => (b.xp || 0) - (a.xp || 0));
+
+    return sortedData.map((item, index) => {
+      const userData = isWeekly ? item.user_id : item;
+      const xp = isWeekly ? userData?.weekly_xp || 0 : userData?.xp || 0;
+
+      return {
+        _id: userData?._id || item._id,
+        rank: index + 1,
+        name: userData?.username || `User ${index + 1}`,
+        email: userData?.email || "",
+        xp: xp,
+        avatar: userData?.username?.charAt(0)?.toUpperCase() || "?",
+        color: getRandomUserColor(),
+        isOnline: true, // You can adjust this based on your data
+        level: Math.floor(xp / 100) + 1, // Simple level calculation
+        streak: 0, // You can adjust this based on your data
+        hearts: 5, // Default hearts
+      };
+    });
+  };
+
+  // Helper function for random colors
+  const getRandomUserColor = () => {
+    const colors = [
+      "#ff9500",
+      "#ff69b4",
+      "#ff4444",
+      "#4CAF50",
+      "#9966ff",
+      "#00BFFF",
+      "#FFD700",
+      "#FF6347",
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  // Get current data based on selected tab
+  const currentData =
+    selectedTab === "overall"
+      ? transformLeaderboardData(overallLeaderboard, false)
+      : transformLeaderboardData(weeklyLeaderboard, true);
+
+  const loading =
+    loadingOverall || loadingWeekly || isLoading || loadingProfile;
+  const error = overallError || weeklyError;
+
+  // Get current user from profile
+  const currentUser = profileData?.data;
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchOverall();
+      refetchWeekly();
+    }, [refetchOverall, refetchWeekly])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetchOverall(), refetchWeekly()]);
+    setRefreshing(false);
+  };
+
+  const handleTabChange = (tab: "overall" | "weekly") => {
+    setSelectedTab(tab);
+  };
 
   const theme = {
     color: {
@@ -60,62 +142,6 @@ const LeaderboardScreen = () => {
       lightPurple: "#AB47BC",
       darkPurple: "#9C27B0",
     },
-  };
-
-  const tournaments = {
-    bronze: {
-      icon: require("../../../assets/images/bronze-medal.png"),
-      title: "Giải đấu Đồng",
-      subtitle: "Dưới 500 XP - Top 15 sẽ được thăng hạng",
-      gradient: "linear-gradient(135deg, #CD7F32, #F4E4BC)",
-      backgroundColor: "#64380dff",
-    },
-    silver: {
-      icon: require("../../../assets/images/silver-medal.png"),
-      title: "Giải đấu Bạc",
-      subtitle: "500 - 1999 XP - Top 10 sẽ được thăng hạng",
-      gradient: "linear-gradient(135deg, #C0C0C0, #E8E8E8)",
-      backgroundColor: "#d4d4d4ff",
-    },
-    gold: {
-      icon: require("../../../assets/images/gold-medal.png"),
-      title: "Giải đấu Vàng",
-      subtitle: "2000 - 9999 XP - Top 5 sẽ được thăng hạng",
-      gradient: "linear-gradient(135deg, #FFD700, #FFF8DC)",
-      backgroundColor: "#faea90ff",
-    },
-    diamond: {
-      icon: require("../../../assets/images/diamond.png"),
-      title: "Giải đấu Kim Cương",
-      subtitle: "Trên 10000 XP - Giải đấu cao nhất",
-      gradient: "linear-gradient(135deg, #00BFFF, #E0F6FF)",
-      backgroundColor: "#caeefaff",
-    },
-  };
-
-  // Set tournament based on user rank
-  useEffect(() => {
-    if (userRank && userRank.tournament) {
-      setSelectedTournament(userRank.tournament as any);
-    }
-  }, [userRank]);
-
-  useFocusEffect(
-    useCallback(() => {
-      refetchLeaderboard();
-    }, [refetchLeaderboard])
-  );
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await refetchLeaderboard();
-    setRefreshing(false);
-  };
-
-  const handleTournamentChange = (
-    tournamentType: "bronze" | "silver" | "gold" | "diamond"
-  ) => {
-    setSelectedTournament(tournamentType);
   };
 
   const getRankColor = (rank: number) => {
@@ -140,7 +166,7 @@ const LeaderboardScreen = () => {
     return `${xp} XP`;
   };
 
-  if (loadingLeaderboard || isLoading) {
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.color.primary} />
@@ -160,27 +186,21 @@ const LeaderboardScreen = () => {
     );
   }
 
-  if (leaderboardError && !leaderboardData) {
+  if (error && currentData.length === 0) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Có lỗi xảy ra</Text>
         <Text style={styles.errorMessage}>
-          {leaderboardError && "data" in leaderboardError
-            ? String(leaderboardError.data)
+          {error && "data" in error
+            ? String(error.data)
             : "Có lỗi xảy ra khi tải bảng xếp hạng"}
         </Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => refetchLeaderboard()}
-        >
+        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
           <Text style={styles.retryButtonText}>Thử lại</Text>
         </TouchableOpacity>
       </View>
     );
   }
-
-  const currentTournament = tournaments[selectedTournament];
-  const currentData = leaderboardData?.[selectedTournament] || [];
 
   return (
     <View style={styles.container}>
@@ -197,34 +217,52 @@ const LeaderboardScreen = () => {
         }
       >
         <View style={styles.fixedHeader}>
-          <View style={styles.tournamentSelector}>
-            {Object.entries(tournaments).map(([key, tournament]) => (
-              <TouchableOpacity
-                key={key}
+          <View style={styles.tabSelector}>
+            <TouchableOpacity
+              style={[
+                styles.tabOption,
+                selectedTab === "overall" && styles.tabOptionActive,
+              ]}
+              onPress={() => handleTabChange("overall")}
+            >
+              <Text
                 style={[
-                  styles.tournamentOption,
-                  selectedTournament === key && styles.tournamentOptionActive,
-                  { backgroundColor: tournament.backgroundColor },
+                  styles.tabText,
+                  selectedTab === "overall" && styles.tabTextActive,
                 ]}
-                onPress={() => handleTournamentChange(key as any)}
               >
-                <Image
-                  style={[
-                    styles.tournamentIcon,
-                    selectedTournament === key && styles.tournamentIconActive,
-                  ]}
-                  source={tournament.icon}
-                />
-              </TouchableOpacity>
-            ))}
+                🏆 Tổng sắp
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tabOption,
+                selectedTab === "weekly" && styles.tabOptionActive,
+              ]}
+              onPress={() => handleTabChange("weekly")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedTab === "weekly" && styles.tabTextActive,
+                ]}
+              >
+                📅 Tuần này
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.tournamentContent}>
-            <Text style={styles.tournamentTitle}>
-              {currentTournament.title}
+          <View style={styles.tabContent}>
+            <Text style={styles.tabTitle}>
+              {selectedTab === "overall"
+                ? "Bảng xếp hạng tổng"
+                : "Bảng xếp hạng tuần"}
             </Text>
-            <Text style={styles.tournamentSubtitle}>
-              {currentTournament.subtitle}
+            <Text style={styles.tabSubtitle}>
+              {selectedTab === "overall"
+                ? "Xếp hạng dựa trên tổng XP tích lũy"
+                : "Xếp hạng dựa trên XP tuần này"}
             </Text>
           </View>
         </View>
@@ -239,12 +277,12 @@ const LeaderboardScreen = () => {
             </View>
           ) : (
             <View style={styles.leaderboardList}>
-              {currentData.map((player, index) => (
+              {currentData.map((player: any, index: number) => (
                 <View
                   key={player._id}
                   style={[
                     styles.leaderboardItem,
-                    user?.id === player._id && styles.currentUserItem,
+                    currentUser?.id === player._id && styles.currentUserItem,
                   ]}
                 >
                   <View
@@ -271,7 +309,7 @@ const LeaderboardScreen = () => {
                   <View style={styles.userInfo}>
                     <Text style={styles.userName} numberOfLines={1}>
                       {player.name}
-                      {user?.id === player._id && " (Bạn)"}
+                      {currentUser?.id === player._id && " (Bạn)"}
                     </Text>
                     <View style={styles.userStats}>
                       <Text style={styles.userLevel}>Level {player.level}</Text>
@@ -515,6 +553,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#FF6B35",
     fontWeight: "500",
+  },
+
+  // New tab styles
+  tabSelector: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+    marginBottom: 20,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 25,
+    padding: 4,
+  },
+  tabOption: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabOptionActive: {
+    backgroundColor: "#00C2D1",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666666",
+  },
+  tabTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  tabContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 15,
+  },
+  tabTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#4B4B4B",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  tabSubtitle: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
 

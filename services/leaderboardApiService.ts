@@ -84,54 +84,15 @@ export const leaderboardApi = apiSlice.injectEndpoints({
       },
     }),
 
-    getUserById: builder.query<UserDetail | null, string>({
-      query: (userId) => `/user/${userId}`,
-      providesTags: (result, error, userId) => [{ type: "User", id: userId }],
-      transformResponse: (response: UserResponse) => {
-        return response.data?.user || null;
-      },
-      transformErrorResponse: (error: any) => {
-        if (error.status === 404) {
-          return null;
-        }
-        throw error;
-      },
-    }),
-
-    // Simplified detailed leaderboard without complex queryFn
-    getDetailedLeaderboard: builder.query<DetailedUser[], void>({
-      query: () => "/leaderboard/detailed",
+    getWeeklyLeaderboard: builder.query<LeaderboardUser[], void>({
+      query: () => "/leaderboard/weekly",
       providesTags: ["Leaderboard"],
-    }),
-
-    // Simplified tournament leaderboards
-    getTournamentLeaderboards: builder.query<TournamentLeaderboards, void>({
-      query: () => "/leaderboard/tournament",
-      providesTags: ["Leaderboard"],
-    }),
-
-    // Simplified current user rank
-    getCurrentUserRank: builder.query<UserRankInfo | null, string>({
-      query: (currentUserId) => `/leaderboard/rank/${currentUserId}`,
-      providesTags: (result, error, currentUserId) => [
-        { type: "Leaderboard", id: currentUserId },
-      ],
     }),
   }),
 });
 
-export const {
-  useGetOverallLeaderboardQuery,
-  useGetUserByIdQuery,
-  useGetDetailedLeaderboardQuery,
-  useGetTournamentLeaderboardsQuery,
-  useGetCurrentUserRankQuery,
-  useLazyGetOverallLeaderboardQuery,
-  useLazyGetUserByIdQuery,
-  useLazyGetDetailedLeaderboardQuery,
-  useLazyGetTournamentLeaderboardsQuery,
-  useLazyGetCurrentUserRankQuery,
-} = leaderboardApi;
+export const { useGetOverallLeaderboardQuery, useGetWeeklyLeaderboardQuery } =
+  leaderboardApi;
 
 // Helper function for random color generation
 const getRandomColor = (): string => {
