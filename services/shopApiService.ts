@@ -4,6 +4,7 @@ export interface ShopItem {
   item: string;
   price: number;
   purchased: boolean;
+  purchasedToday?: boolean; // Track if purchased today for daily limits
 }
 
 export interface ShopItemsResponse {
@@ -37,15 +38,20 @@ export interface ShopHistoryResponse {
 export interface ShopStatusResponse {
   success: boolean;
   status: {
-    is_freeze: boolean;
-    hearts: number;
-    streak_days: number;
-    double_or_nothing: {
-      start_date: string;
-      is_active: boolean;
-      is_completed: boolean;
-    } | null;
+    freeze: {
+      quantity: number;
+      can_buy: boolean;
+    };
+    double: {
+      active: boolean;
+      can_buy: boolean;
+    };
+    repair: {
+      available: boolean;
+      can_buy: boolean;
+    };
   };
+  history: ShopHistoryItem[];
 }
 
 export const shopApiSlice = apiSlice.injectEndpoints({
@@ -64,11 +70,6 @@ export const shopApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["Shop", "User"], // Invalidate both shop items and user balance
     }),
 
-    getShopHistory: builder.query<ShopHistoryResponse, void>({
-      query: () => "/shop/history",
-      providesTags: ["Shop"],
-    }),
-
     getShopStatus: builder.query<ShopStatusResponse, void>({
       query: () => "/shop/status",
       providesTags: ["Shop"],
@@ -79,7 +80,6 @@ export const shopApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetShopItemsQuery,
   usePurchaseItemMutation,
-  useGetShopHistoryQuery,
   useGetShopStatusQuery,
 } = shopApiSlice;
 
@@ -110,3 +110,85 @@ export const ShopItemDisplayInfo = {
     type: "boost" as const,
   },
 } as const;
+
+// Helper function to determine if an item can be purchased based on shop status
+export const canPurchaseItem = (
+  item: ShopItem,
+  shopStatus: ShopStatusResponse["status"] | null
+): { canPurchase: boolean; reason?: string } => {
+  if (!shopStatus) {
+    return { canPurchase: false, reason: "Không thể tải trạng thái cửa hàng" };
+  }
+
+  // If already purchased today, cannot purchase again
+  if (item.purchasedToday) {
+    return { canPurchase: false, reason: "Đã mua hôm nay" };
+  }
+
+  // Check specific item conditions based on shop status
+  switch (item.item) {
+    case "STREAK_FREEZE":
+      console.log(
+        `🧊 Streak Freeze check: Can buy = ${shopStatus.freeze.can_buy}, Quantity = ${shopStatus.freeze.quantity}`
+      );
+      if (!shopStatus.freeze.can_buy) {
+        return { canPurchase: false, reason: "Đã có tối đa 2 Streak Freeze" };
+      }
+      break;
+
+    case "DOUBLE_OR_NOTHING":
+      console.log(
+        `⚡ Double or Nothing check: Can buy = ${shopStatus.double.can_buy}, Active = ${shopStatus.double.active}`
+      );
+      if (!shopStatus.double.can_buy) {
+        return {
+          canPurchase: false,
+          reason: shopStatus.double.active
+            ? "Double or Nothing đang hoạt động"
+            : "Không thể mua Double or Nothing",
+        };
+      }
+      break;
+
+    case "STREAK_REPAIR":
+      console.log(
+        `🏆 Streak Repair check: Can buy = ${shopStatus.repair.can_buy}, Available = ${shopStatus.repair.available}`
+      );
+      if (!shopStatus.repair.can_buy) {
+        return { canPurchase: false, reason: "Streak Repair không khả dụng" };
+      }
+      if (!shopStatus.repair.available) {
+        return { canPurchase: false, reason: "Streak không bị hỏng" };
+      }
+      break;
+  }
+
+  return { canPurchase: true };
+};
+
+// Helper function to get user's inventory from shop status
+export const getUserInventory = (shopStatus: ShopStatusResponse["status"]) => {
+  return {
+    streakFreeze: {
+      quantity: shopStatus.freeze.quantity,
+      canBuy: shopStatus.freeze.can_buy,
+    },
+    doubleOrNothing: {
+      active: shopStatus.double.active,
+      canBuy: shopStatus.double.can_buy,
+    },
+    streakRepair: {
+      available: shopStatus.repair.available,
+      canBuy: shopStatus.repair.can_buy,
+    },
+  };
+};
+
+// Helper function to get today's purchases from history
+export const getTodaysPurchases = (history: ShopHistoryItem[]) => {
+  const today = new Date().toDateString();
+  return history.filter((item) => {
+    const purchaseDate = new Date(item.createdAt).toDateString();
+    return purchaseDate === today;
+  });
+};

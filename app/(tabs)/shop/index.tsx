@@ -15,9 +15,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../hooks/useAuth";
 import {
   ShopItem as ApiShopItem,
+  canPurchaseItem,
+  getTodaysPurchases,
+  getUserInventory,
   ShopItemDisplayInfo,
-  useGetShopHistoryQuery,
   useGetShopItemsQuery,
+  useGetShopStatusQuery,
   usePurchaseItemMutation,
 } from "../../../services/shopApiService";
 
@@ -31,10 +34,10 @@ export default function ShopScreen() {
     refetch: refetchItems,
   } = useGetShopItemsQuery();
   const {
-    data: historyData,
-    isLoading: isLoadingHistory,
-    refetch: refetchHistory,
-  } = useGetShopHistoryQuery();
+    data: shopStatusData,
+    isLoading: isLoadingStatus,
+    refetch: refetchStatus,
+  } = useGetShopStatusQuery();
   const [purchaseItem, { isLoading: isPurchasing }] = usePurchaseItemMutation();
   const [selectedCategory, setSelectedCategory] = useState<
     "all" | "boost" | "unlock" | "cosmetic"
@@ -43,7 +46,7 @@ export default function ShopScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchItems(), refetchHistory()]);
+    await Promise.all([refetchItems(), refetchStatus()]);
     setRefreshing(false);
   };
 
@@ -52,6 +55,17 @@ export default function ShopScreen() {
     const displayInfo =
       ShopItemDisplayInfo[item.item as keyof typeof ShopItemDisplayInfo];
 
+    // Check if item can be purchased based on shop status
+    const purchaseCheck = canPurchaseItem(item, shopStatusData?.status || null);
+    if (!purchaseCheck.canPurchase) {
+      Alert.alert(
+        "Không thể mua",
+        purchaseCheck.reason || "Không thể mua vật phẩm này"
+      );
+      return;
+    }
+
+    // Check legacy purchased status
     if (item.purchased) {
       Alert.alert("Đã mua", "Bạn đã mua vật phẩm này rồi!");
       return;
@@ -96,10 +110,20 @@ export default function ShopScreen() {
                 } gems.`
               );
             } catch (error: any) {
-              const errorMessage =
-                error?.data?.message ||
-                error?.message ||
-                "Có lỗi xảy ra khi mua vật phẩm";
+              let errorMessage = "Có lỗi xảy ra khi mua vật phẩm";
+
+              // Handle specific error for daily purchase limit
+              if (
+                error?.data?.message === "You have purchased this item today"
+              ) {
+                errorMessage =
+                  "Bạn đã mua vật phẩm này hôm nay rồi. Vui lòng thử lại vào ngày mai.";
+              } else if (error?.data?.message) {
+                errorMessage = error.data.message;
+              } else if (error?.message) {
+                errorMessage = error.message;
+              }
+
               Alert.alert("Lỗi", errorMessage);
             }
           },
@@ -108,12 +132,22 @@ export default function ShopScreen() {
     );
   };
 
+  // Combine shop items with purchase status from history
   const shopItems = shopItemsData?.items || [];
+  const todaysPurchases = shopStatusData
+    ? getTodaysPurchases(shopStatusData.history)
+    : [];
+  const todaysPurchaseItems = new Set(todaysPurchases.map((p) => p.item));
+
+  const itemsWithPurchaseStatus = shopItems.map((item) => ({
+    ...item,
+    purchasedToday: todaysPurchaseItems.has(item.item),
+  }));
 
   const filteredItems =
     selectedCategory === "all"
-      ? shopItems
-      : shopItems.filter((item) => {
+      ? itemsWithPurchaseStatus
+      : itemsWithPurchaseStatus.filter((item) => {
           const displayInfo =
             ShopItemDisplayInfo[item.item as keyof typeof ShopItemDisplayInfo];
           return displayInfo?.type === selectedCategory;
@@ -141,40 +175,99 @@ export default function ShopScreen() {
     </TouchableOpacity>
   );
 
+  const renderUserStats = () => {
+    if (!user || !shopStatusData) return null;
+
+    const hearts = user.hearts || 0;
+    const inventory = getUserInventory(shopStatusData.status);
+    const todaysPurchases = getTodaysPurchases(shopStatusData.history);
+
+    return (
+      <View style={styles.userStatsContainer}>
+        <Text style={styles.userStatsTitle}>Trạng thái hiện tại:</Text>
+        <View style={styles.userStatsRow}>
+          <Text style={styles.userStat}>❤️ Tim: {hearts}/5</Text>
+          <Text style={styles.userStat}>
+            🧊 Streak Freeze: {inventory.streakFreeze.quantity}/2
+          </Text>
+        </View>
+        <View style={styles.userStatsRow}>
+          <Text style={styles.userStat}>
+            ⚡ Double or Nothing:{" "}
+            {inventory.doubleOrNothing.active
+              ? "Đang hoạt động"
+              : "Không hoạt động"}
+          </Text>
+        </View>
+        <View style={styles.userStatsRow}>
+          <Text style={styles.userStat}>
+            📦 Mua hôm nay: {todaysPurchases.length} vật phẩm
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   const renderShopItem = (item: ApiShopItem) => {
     const displayInfo =
       ShopItemDisplayInfo[item.item as keyof typeof ShopItemDisplayInfo];
 
     if (!displayInfo) return null;
 
+    // Check if item can be purchased
+    const purchaseCheck = canPurchaseItem(item, shopStatusData?.status || null);
+    const isLocked = !purchaseCheck.canPurchase;
+    const isDisabled = item.purchased || isPurchasing || isLocked;
+
     return (
       <View
         key={item.item}
-        style={[styles.shopItem, item.purchased && styles.shopItemPurchased]}
+        style={[
+          styles.shopItem,
+          item.purchased && styles.shopItemPurchased,
+          isLocked && styles.shopItemLocked,
+        ]}
       >
-        <Image source={displayInfo.image} style={styles.itemImage} />
+        <Image
+          source={displayInfo.image}
+          style={[styles.itemImage, isLocked && styles.itemImageLocked]}
+        />
         <View style={styles.itemInfo}>
-          <Text style={styles.itemName}>{displayInfo.name}</Text>
-          <Text style={styles.itemDescription}>{displayInfo.description}</Text>
+          <Text style={[styles.itemName, isLocked && styles.itemNameLocked]}>
+            {displayInfo.name}
+          </Text>
+          <Text
+            style={[
+              styles.itemDescription,
+              isLocked && styles.itemDescriptionLocked,
+            ]}
+          >
+            {displayInfo.description}
+          </Text>
+          {isLocked && (
+            <Text style={styles.lockReason}>{purchaseCheck.reason}</Text>
+          )}
           <View style={styles.itemFooter}>
-            <Text style={styles.itemPrice}>{item.price} 💎</Text>
+            <Text
+              style={[styles.itemPrice, isLocked && styles.itemPriceLocked]}
+            >
+              {item.price} 💎
+            </Text>
             <TouchableOpacity
-              style={[
-                styles.buyButton,
-                (item.purchased || isPurchasing) && styles.buyButtonDisabled,
-              ]}
+              style={[styles.buyButton, isDisabled && styles.buyButtonDisabled]}
               onPress={() => handlePurchase(item)}
-              disabled={item.purchased || isPurchasing}
+              disabled={isDisabled}
             >
               <Text
                 style={[
                   styles.buyButtonText,
-                  (item.purchased || isPurchasing) &&
-                    styles.buyButtonTextDisabled,
+                  isDisabled && styles.buyButtonTextDisabled,
                 ]}
               >
                 {item.purchased
                   ? "ĐÃ MUA"
+                  : isLocked
+                  ? "KHÓA"
                   : isPurchasing
                   ? "ĐANG MUA..."
                   : "MUA"}
@@ -203,6 +296,9 @@ export default function ShopScreen() {
           </View>
         </View>
 
+        {/* User Stats */}
+        {renderUserStats()}
+
         {/* Categories */}
         <View style={styles.categoriesContainer}>
           <ScrollView
@@ -219,7 +315,7 @@ export default function ShopScreen() {
 
         {/* Shop Items */}
         <View style={styles.itemsContainer}>
-          {isLoadingItems ? (
+          {isLoadingItems || isLoadingStatus ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#00C2D1" />
               <Text style={styles.loadingText}>Đang tải sản phẩm...</Text>
@@ -231,7 +327,10 @@ export default function ShopScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={refetchItems}
+                onPress={() => {
+                  refetchItems();
+                  refetchStatus();
+                }}
               >
                 <Text style={styles.retryText}>Thử lại</Text>
               </TouchableOpacity>
@@ -250,6 +349,50 @@ export default function ShopScreen() {
             </View>
           )}
         </View>
+
+        {/* Purchase History */}
+        {shopStatusData?.history && shopStatusData.history.length > 0 && (
+          <View style={styles.historyContainer}>
+            <Text style={styles.historyTitle}>Lịch sử mua hàng gần đây</Text>
+            {shopStatusData.history.slice(0, 5).map((purchase) => {
+              const displayInfo =
+                ShopItemDisplayInfo[
+                  purchase.item as keyof typeof ShopItemDisplayInfo
+                ];
+              const purchaseDate = new Date(purchase.createdAt);
+              const isToday =
+                purchaseDate.toDateString() === new Date().toDateString();
+
+              return (
+                <View key={purchase._id} style={styles.historyItem}>
+                  <Image
+                    source={
+                      displayInfo?.image ||
+                      require("../../../assets/images/chest.png")
+                    }
+                    style={styles.historyItemImage}
+                  />
+                  <View style={styles.historyItemInfo}>
+                    <Text style={styles.historyItemName}>
+                      {displayInfo?.name || purchase.item}
+                    </Text>
+                    <Text style={styles.historyItemDate}>
+                      {isToday
+                        ? "Hôm nay"
+                        : purchaseDate.toLocaleDateString("vi-VN")}{" "}
+                      • {purchase.price} 💎
+                    </Text>
+                  </View>
+                  {isToday && (
+                    <View style={styles.todayBadge}>
+                      <Text style={styles.todayBadgeText}>Mới</Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -341,11 +484,19 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     backgroundColor: "#f8f8f8",
   },
+  shopItemLocked: {
+    opacity: 0.5,
+    backgroundColor: "#f5f5f5",
+    borderColor: "#d0d0d0",
+  },
   itemImage: {
     width: 60,
     height: 60,
     borderRadius: 8,
     marginRight: 16,
+  },
+  itemImageLocked: {
+    opacity: 0.4,
   },
   itemInfo: {
     flex: 1,
@@ -356,11 +507,23 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 4,
   },
+  itemNameLocked: {
+    color: "#999",
+  },
   itemDescription: {
     fontSize: 14,
     color: "#666",
     marginBottom: 12,
     lineHeight: 20,
+  },
+  itemDescriptionLocked: {
+    color: "#aaa",
+  },
+  lockReason: {
+    fontSize: 12,
+    color: "#ff6b6b",
+    fontStyle: "italic",
+    marginBottom: 8,
   },
   itemFooter: {
     flexDirection: "row",
@@ -371,6 +534,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#4CAF50",
+  },
+  itemPriceLocked: {
+    color: "#bbb",
   },
   buyButton: {
     backgroundColor: "#00C2D1",
@@ -451,5 +617,78 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     lineHeight: 20,
+  },
+  userStatsContainer: {
+    backgroundColor: "#f8f9fa",
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  userStatsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 8,
+  },
+  userStatsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  userStat: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#636e72",
+  },
+  historyContainer: {
+    backgroundColor: "#ffffff",
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 12,
+  },
+  historyItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f3f4",
+  },
+  historyItemImage: {
+    width: 32,
+    height: 32,
+    marginRight: 12,
+  },
+  historyItemInfo: {
+    flex: 1,
+  },
+  historyItemName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#2d3436",
+  },
+  historyItemDate: {
+    fontSize: 12,
+    color: "#636e72",
+    marginTop: 2,
+  },
+  todayBadge: {
+    backgroundColor: "#00C2D1",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  todayBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#ffffff",
   },
 });
