@@ -2,7 +2,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   RefreshControl,
@@ -13,43 +12,34 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../../hooks/useAuth";
-import LeaderboardService from "../../../services/leaderboardService";
+import {
+  useGetCurrentUserRankQuery,
+  useGetTournamentLeaderboardsQuery,
+} from "../../../services/leaderboardApiService";
 
 const { width: screenWidth } = Dimensions.get("window");
-
-interface DetailedUser {
-  rank: number;
-  _id: string;
-  name: string;
-  email: string;
-  score: string;
-  xp: number;
-  avatar: string;
-  color: string;
-  isOnline: boolean;
-  level: number;
-  streak: number;
-  hearts: number;
-}
-
-interface TournamentLeaderboards {
-  bronze: DetailedUser[];
-  silver: DetailedUser[];
-  gold: DetailedUser[];
-  diamond: DetailedUser[];
-}
 
 const LeaderboardScreen = () => {
   const [selectedTournament, setSelectedTournament] = useState<
     "bronze" | "silver" | "gold" | "diamond"
   >("bronze");
-  const [leaderboardData, setLeaderboardData] =
-    useState<TournamentLeaderboards | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const { user, isAuthenticated, isLoading } = useAuth();
+
+  // RTK Query hooks
+  const {
+    data: leaderboardData,
+    isLoading: loadingLeaderboard,
+    error: leaderboardError,
+    refetch: refetchLeaderboard,
+  } = useGetTournamentLeaderboardsQuery();
+
+  const { data: userRank, isLoading: loadingUserRank } =
+    useGetCurrentUserRankQuery(user?.id || user?._id || "", {
+      skip: !user?.id && !user?._id,
+    });
+
+  const [refreshing, setRefreshing] = useState(false);
 
   const theme = {
     color: {
@@ -103,54 +93,23 @@ const LeaderboardScreen = () => {
     },
   };
 
-  const loadLeaderboardData = async (showLoading = true) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-      setError(null);
-
-      const data = await LeaderboardService.getTournamentLeaderboards();
-      setLeaderboardData(data);
-
-      if (user && (user.id || user._id)) {
-        const userId = user.id || user._id;
-        if (userId) {
-          const userRank = await LeaderboardService.getCurrentUserRank(userId);
-          if (userRank) {
-            setSelectedTournament(userRank.tournament as any);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error loading leaderboard:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Có lỗi xảy ra khi tải bảng xếp hạng"
-      );
-      Alert.alert("Lỗi", "Không thể tải bảng xếp hạng. Vui lòng thử lại sau.");
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-      setRefreshing(false);
-    }
-  };
-
+  // Set tournament based on user rank
   useEffect(() => {
-    loadLeaderboardData();
-  }, []);
+    if (userRank && userRank.tournament) {
+      setSelectedTournament(userRank.tournament as any);
+    }
+  }, [userRank]);
 
   useFocusEffect(
     useCallback(() => {
-      loadLeaderboardData(false);
-    }, [])
+      refetchLeaderboard();
+    }, [refetchLeaderboard])
   );
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    loadLeaderboardData(false);
+    await refetchLeaderboard();
+    setRefreshing(false);
   };
 
   const handleTournamentChange = (
@@ -181,7 +140,7 @@ const LeaderboardScreen = () => {
     return `${xp} XP`;
   };
 
-  if (loading || isLoading) {
+  if (loadingLeaderboard || isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.color.primary} />
@@ -201,14 +160,18 @@ const LeaderboardScreen = () => {
     );
   }
 
-  if (error && !leaderboardData) {
+  if (leaderboardError && !leaderboardData) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Có lỗi xảy ra</Text>
-        <Text style={styles.errorMessage}>{error}</Text>
+        <Text style={styles.errorMessage}>
+          {leaderboardError && "data" in leaderboardError
+            ? String(leaderboardError.data)
+            : "Có lỗi xảy ra khi tải bảng xếp hạng"}
+        </Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => loadLeaderboardData()}
+          onPress={() => refetchLeaderboard()}
         >
           <Text style={styles.retryButtonText}>Thử lại</Text>
         </TouchableOpacity>
