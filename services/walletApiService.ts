@@ -82,9 +82,9 @@ export class WalletUtils {
    * Convert VND to Gem based on backend logic
    */
   static convertVndToGem(amount: number): number {
-    if (amount >= 200_000) return 2800;
-    if (amount >= 100_000) return 1300;
-    if (amount >= 50_000) return 600;
+    if (amount >= 200_000) return 2000;
+    if (amount >= 100_000) return 1000;
+    if (amount >= 50_000) return 500;
     if (amount >= 10_000) return 100;
     return Math.floor((amount * 10) / 1000); // 1.000₫ = 10 gem
   }
