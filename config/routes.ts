@@ -1,8 +1,10 @@
 export const ROUTES = {
   // Auth
   LOGIN: "/auth/login",
-  REGISTER: "/auth/register",
   FORGOT_PASSWORD: "/auth/forgot-password",
+
+  // Onboarding
+  ONBOARDING_REGISTER: "/onboarding/register",
 
   // Main App Routes
   HOME: "/(tabs)/home",

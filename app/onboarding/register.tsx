@@ -1,18 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import { BackButton, Button } from "../../components";
-import { AppDispatch } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
-import { useOnboardingCheck } from "../../hooks/useOnboardingCheck";
-import {
-  useLoginMutation,
-  useSetupRegisterMutation,
-} from "../../services/auth/authApiService";
-import { storeAuthData } from "../../services/auth/authSlice";
+import { useAuth } from "../../hooks/useAuth";
 import { Language } from "../../services/languageApiService";
 
 export default function OnboardingRegisterScreen() {
@@ -23,13 +17,7 @@ export default function OnboardingRegisterScreen() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { completeOnboarding } = useOnboardingCheck();
-  const [setupRegister, { isLoading: registerLoading }] =
-    useSetupRegisterMutation();
-  const [login, { isLoading: loginLoading }] = useLoginMutation();
-
-  const loading = registerLoading || loginLoading;
+  const { setupRegister, isLoading } = useAuth();
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -72,51 +60,90 @@ export default function OnboardingRegisterScreen() {
   };
 
   const handleRegister = async () => {
+    console.log("🔄 Starting registration...", {
+      email,
+      password: "***",
+      username,
+    });
+
     if (!validateForm()) {
+      console.log("❌ Form validation failed");
       return;
     }
 
     try {
       // Get selected language from AsyncStorage
       const storedLanguageStr = await AsyncStorage.getItem("selectedLanguage");
+      console.log("📚 Stored language:", storedLanguageStr);
+
+      let selectedLanguage: Language;
 
       if (!storedLanguageStr) {
-        setValidationError("Please select a language to learn first");
-        return;
+        console.log("⚠️ No language selected, using default English");
+        // Default to English if no language is selected
+        selectedLanguage = {
+          _id: "default-en",
+          code: "en",
+          name: "English",
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      } else {
+        selectedLanguage = JSON.parse(storedLanguageStr);
       }
 
-      const selectedLanguage: Language = JSON.parse(storedLanguageStr);
+      console.log("🌍 Selected language:", selectedLanguage);
 
-      // Step 1: Call setup-register API to create the account
-      await setupRegister({
+      const registerData = {
         email,
         password,
         username: username || email.split("@")[0], // Use email prefix if no username
         language_from: "vi", // Vietnamese (source language)
         language_to: selectedLanguage.code, // Target language
         current_level: 0, // Beginner level
-      }).unwrap();
+      };
 
-      // Step 2: Login to get the auth tokens
-      const loginResult = await login({
-        email,
-        password,
-      }).unwrap();
+      console.log("📝 Registration data:", {
+        ...registerData,
+        password: "***",
+      });
 
-      // Step 3: Store authentication data
-      await dispatch(storeAuthData(loginResult.data));
+      // Call setup-register API to create the account
+      const result = await setupRegister(registerData);
+      console.log("✅ Setup register result:", result);
 
-      // Step 4: Mark onboarding as completed
-      await completeOnboarding();
+      if (result.message === "Setup register successfully!") {
+        console.log("🔐 Storing verification credentials...");
 
-      // Step 5: Clear the stored language data since it's now saved in the user profile
-      await AsyncStorage.removeItem("selectedLanguage");
+        // Store email and password securely for verification polling
+        await SecureStore.setItemAsync("verification_email", email);
+        await SecureStore.setItemAsync("verification_password", password);
 
-      // Step 6: Navigate to home
-      router.push("/(tabs)/home" as any);
+        // Store the selected language for post-verification setup
+        await SecureStore.setItemAsync(
+          "verification_language",
+          JSON.stringify(selectedLanguage)
+        );
+
+        console.log("🚀 Navigating to email verification...");
+
+        // Navigate to email verification screen
+        router.push({
+          pathname: "/auth/email-verification",
+          params: { email: email },
+        });
+      } else {
+        console.log("❌ Unexpected response:", result);
+        setValidationError("Registration failed. Please try again.");
+      }
     } catch (error: any) {
+      console.error("❌ Registration error:", error);
       const errorMessage =
-        error?.data?.message || "Registration failed. Please try again.";
+        error?.data?.message ||
+        error?.message ||
+        "Registration failed. Please try again.";
+      console.log("💬 Error message:", errorMessage);
       setValidationError(errorMessage);
     }
   };
@@ -186,7 +213,7 @@ export default function OnboardingRegisterScreen() {
           <Button
             title="Create Account"
             onPress={handleRegister}
-            loading={loading}
+            loading={isLoading}
             style={styles.registerButton}
           />
         </View>
