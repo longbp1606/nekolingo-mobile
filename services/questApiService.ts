@@ -59,9 +59,9 @@ export interface QuestProgress {
 }
 
 export interface DailyQuestsResponse {
-  data: UserQuest[];
-  pagination: null;
-  message: string;
+  data?: UserQuest[];
+  pagination?: null;
+  message?: string;
 }
 
 export const questApi = apiSlice.injectEndpoints({
@@ -69,12 +69,17 @@ export const questApi = apiSlice.injectEndpoints({
     getDailyQuests: builder.query<UserQuest[], void>({
       query: () => "/quest/daily",
       providesTags: ["Quest"],
-      transformResponse: (response: DailyQuestsResponse) => {
-        // If API fails, return mock data for development
-        if (!response?.data) {
-          return getMockQuests();
+      transformResponse: (response: UserQuest[] | DailyQuestsResponse) => {
+        if (Array.isArray(response)) {
+          return response;
         }
-        return response.data;
+
+        if (response && 'data' in response && response.data) {
+          return response.data;
+        }
+
+        console.warn("API returned invalid response:", response);
+        return [];
       },
     }),
 
@@ -88,7 +93,6 @@ export const questApi = apiSlice.injectEndpoints({
         body: { progress },
       }),
       invalidatesTags: ["Quest"],
-      // Optimistic update
       async onQueryStarted(
         { questId, progress },
         { dispatch, queryFulfilled }
@@ -109,7 +113,8 @@ export const questApi = apiSlice.injectEndpoints({
         );
         try {
           await queryFulfilled;
-        } catch {
+        } catch (error) {
+          console.error("Failed to update quest progress:", error);
           patchResult.undo();
         }
       },
@@ -121,6 +126,14 @@ export const questApi = apiSlice.injectEndpoints({
         method: "POST",
       }),
       invalidatesTags: ["Quest", "User"],
+      async onQueryStarted(questId, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(questApi.util.invalidateTags(["Quest"]));
+        } catch (error) {
+          console.error("Failed to complete quest:", error);
+        }
+      },
     }),
 
     claimQuestReward: builder.mutation<QuestClaimResponse, string>({
@@ -129,81 +142,18 @@ export const questApi = apiSlice.injectEndpoints({
         method: "POST",
       }),
       invalidatesTags: ["Quest", "User"],
+      async onQueryStarted(questId, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(questApi.util.invalidateTags(["Quest", "User"]));
+        } catch (error) {
+          console.error("Failed to claim quest reward:", error);
+        }
+      },
     }),
   }),
 });
 
-// Mock data for development
-function getMockQuests(): UserQuest[] {
-  return [
-    {
-      _id: "6885d02094cd182006a297d1",
-      user_id: "6882f9114afd8ba5efed678c",
-      quest_id: {
-        _id: "f4afbb1da8b94e3bb13657f8",
-        title: "Hoàn thành 3 bài học để nhận Streak Freeze",
-        icon: "https://example.com/icons/freeze.png",
-        reward: {
-          type: "freeze",
-          amount: 1,
-        },
-        type: "Complete",
-        condition: 3,
-        progress: 1,
-        progress_text: "1/3",
-      },
-      is_completed: false,
-      __v: 0,
-      createdAt: "2025-07-27T07:07:12.946Z",
-      updatedAt: "2025-07-27T07:07:12.946Z",
-    },
-    {
-      _id: "6885d02094cd182006a297d0",
-      user_id: "6882f9114afd8ba5efed678c",
-      quest_id: {
-        _id: "2e5faa2c4db0435eadfcfdd6",
-        title: "Đạt trên 95% trong 1 bài học",
-        icon: "https://example.com/icons/result.png",
-        reward: {
-          type: "heart",
-          amount: 2,
-        },
-        type: "Result",
-        condition: 1,
-        score: 95,
-        progress: 0,
-        progress_text: "0/1",
-      },
-      is_completed: false,
-      __v: 0,
-      createdAt: "2025-07-27T07:07:12.946Z",
-      updatedAt: "2025-07-27T07:07:12.946Z",
-    },
-    {
-      _id: "6885d02094cd182006a297cf",
-      user_id: "6882f9114afd8ba5efed678c",
-      quest_id: {
-        _id: "f0b79496e6834f6499c3a858",
-        title: "Thu thập 300 XP trong ngày",
-        icon: "https://example.com/icons/xp.png",
-        reward: {
-          type: "gem",
-          amount: 30,
-        },
-        type: "XP",
-        condition: 300,
-        progress: 150,
-        progress_text: "150/300",
-      },
-      is_completed: false,
-      __v: 0,
-      createdAt: "2025-07-27T07:07:12.946Z",
-      updatedAt: "2025-07-27T07:07:12.946Z",
-    },
-  ];
-}
-
-// Utility functions for quest formatting
 export const formatQuestForUI = (userQuest: UserQuest): FormattedQuest => {
   const { quest_id, is_completed } = userQuest;
   const currentProgress =
@@ -258,6 +208,21 @@ function getQuestIcon(type: string): string {
       return "🏆";
   }
 }
+
+export const formatQuestsForUI = (quests: UserQuest[]): FormattedQuest[] => {
+  return quests.map(formatQuestForUI);
+};
+
+export const getQuestProgressPercentage = (quest: UserQuest): number => {
+  const progress = quest.quest_id.progress || 0;
+  const condition = quest.quest_id.condition;
+  return Math.min((progress / condition) * 100, 100);
+};
+
+export const canCompleteQuest = (quest: UserQuest): boolean => {
+  const progress = quest.quest_id.progress || 0;
+  return progress >= quest.quest_id.condition && !quest.is_completed;
+};
 
 export const {
   useGetDailyQuestsQuery,
