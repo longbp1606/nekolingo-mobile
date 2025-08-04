@@ -34,6 +34,17 @@ export interface ExplainAnswerResponse {
   is_mistake: boolean;
 }
 
+export interface WeeklyStreakData {
+  streak_days: number;
+  is_freeze: boolean;
+  freeze_count: number;
+  week: Array<{
+    day: string;
+    date: string;
+    status: "streak" | "freeze" | "missed";
+  }>;
+}
+
 export const progressApiService = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     completeFullLesson: builder.mutation<any, CompleteFullLessonRequest>({
@@ -62,6 +73,13 @@ export const progressApiService = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["User"], // Invalidate user cache to refresh heart count
     }),
+    getWeeklyStreak: builder.query<WeeklyStreakData, string>({
+      query: (userId) => ({
+        url: `/user-progress/weekly-streak/${userId}`,
+        method: "GET",
+      }),
+      providesTags: ["User"], // Cache the streak data
+    }),
   }),
   overrideExisting: true, // Allow overriding during hot reload in development
 });
@@ -70,4 +88,5 @@ export const {
   useCompleteFullLessonMutation,
   useExplainAnswerMutation,
   useSubmitExerciseMutation,
+  useGetWeeklyStreakQuery,
 } = progressApiService;
