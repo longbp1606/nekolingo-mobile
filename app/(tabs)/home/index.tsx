@@ -13,6 +13,7 @@ import {
   Unit,
 } from "../../../components/home";
 import { useAuth } from "../../../hooks/useAuth";
+import { useHearts } from "../../../hooks/useHearts";
 import {
   useGetCourseMetadataQuery,
   useGetCoursesQuery,
@@ -120,6 +121,7 @@ const HomeScreen: React.FC = () => {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const { user } = useAuth();
+  const { handleHeartCheck } = useHearts();
 
   // Fallback: get courses if user doesn't have currentCourse set
   const { data: coursesResponse, isLoading: coursesLoading } =
@@ -247,7 +249,10 @@ const HomeScreen: React.FC = () => {
   const handleStartLesson = (lessonId: string) => {
     setModalVisible(false);
     if (lessonId) {
-      navigateToLesson(lessonId);
+      // Check hearts before navigation
+      handleHeartCheck(() => {
+        navigateToLesson(lessonId);
+      });
     } else {
       console.warn("Cannot start lesson: No lesson ID provided");
     }

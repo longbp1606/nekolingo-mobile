@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
 import { RootState } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
+import { useHearts } from "../../hooks/useHearts";
 import {
   ExplainAnswerResponse,
   useExplainAnswerMutation,
@@ -30,6 +31,7 @@ interface ExerciseResult {
 
 export default function ExerciseResultScreen() {
   const router = useRouter();
+  const { handleHeartCheck } = useHearts();
   const params = useLocalSearchParams<{
     lessonId: string;
     score: string;
@@ -125,7 +127,10 @@ export default function ExerciseResultScreen() {
   };
 
   const handleTryAgain = () => {
-    router.push(`/exercise/${result.lessonId}`);
+    // Check hearts before allowing retry
+    handleHeartCheck(() => {
+      router.push(`/exercise/${result.lessonId}`);
+    });
   };
 
   return (
