@@ -73,24 +73,6 @@ export const userApi = apiSlice.injectEndpoints({
         "User",
       ],
     }),
-
-    getUserFollowing: builder.query<UserFollowing[], string>({
-      query: (userId) => `/user/${userId}/following`,
-      providesTags: (result, error, userId) => [
-        { type: "User", id: `${userId}-following` },
-      ],
-      transformResponse: (response: UserFollowingResponse) =>
-        response.data || [],
-    }),
-
-    getUserFollowers: builder.query<UserFollowing[], string>({
-      query: (userId) => `/user/${userId}/followers`,
-      providesTags: (result, error, userId) => [
-        { type: "User", id: `${userId}-followers` },
-      ],
-      transformResponse: (response: UserFollowingResponse) =>
-        response.data || [],
-    }),
   }),
 });
 
@@ -98,6 +80,4 @@ export const {
   useGetUserProfileQuery,
   useRefreshUserProfileQuery,
   useUpdateUserProfileMutation,
-  useGetUserFollowingQuery,
-  useGetUserFollowersQuery,
 } = userApi;
