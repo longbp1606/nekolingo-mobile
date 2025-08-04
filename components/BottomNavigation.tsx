@@ -14,37 +14,37 @@ const navItems: BottomNavItem[] = [
   {
     id: "home",
     icon: require("../assets/images/house-cleaning.png"),
-    label: "Home",
+    label: "Trang chủ",
     route: "/(tabs)/home",
   },
   {
     id: "streak",
     icon: require("../assets/images/reward.png"),
-    label: "Streak",
+    label: "Nhiệm vụ",
     route: "/(tabs)/streak",
   },
-  {
-    id: "exercise",
-    icon: require("../assets/images/homework.png"),
-    label: "Exercise",
-    route: "/(tabs)/exercise",
-  },
+  // {
+  //   id: "exercise",
+  //   icon: require("../assets/images/homework.png"),
+  //   label: "Bài tập",
+  //   route: "/(tabs)/exercise",
+  // },
   {
     id: "leaderboard",
     icon: require("../assets/images/trophy.png"),
-    label: "Leaderboard",
+    label: "Bảng xếp hạng",
     route: "/(tabs)/leaderboard",
   },
   {
     id: "shop",
     icon: require("../assets/images/subscription.png"),
-    label: "Shop",
+    label: "Cửa hàng",
     route: "/(tabs)/shop",
   },
   {
     id: "profile",
     icon: require("../assets/images/user.png"),
-    label: "Profile",
+    label: "Hồ sơ",
     route: "/(tabs)/profile",
   },
 ];

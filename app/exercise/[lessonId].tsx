@@ -18,6 +18,7 @@ import {
 } from "../../components/exercise";
 import { RootState } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
+import { useHearts } from "../../hooks/useHearts";
 import { useGetLessonByIdQuery } from "../../services/lessonApiService";
 import {
   ExerciseAnswer,
@@ -27,6 +28,7 @@ import {
 export default function ExerciseScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const router = useRouter();
+  const { currentHearts, loseHeartOnWrongAnswer, maxHearts } = useHearts();
 
   const {
     data: currentLesson,
@@ -44,7 +46,7 @@ export default function ExerciseScreen() {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [lives, setLives] = useState(5);
+  // Remove hardcoded lives state - now using hearts from global state
 
   // Additional state for different question types
   const [reorderedWords, setReorderedWords] = useState<string[]>([]);
@@ -243,7 +245,53 @@ export default function ExerciseScreen() {
           return newCount;
         });
       } else {
-        setLives((prev) => Math.max(0, prev - 1));
+        // Calculate answer time and user answer for API submission
+        const answerTime = Math.round((Date.now() - exerciseStartTime) / 1000);
+        let userAnswerForAPI: any;
+
+        switch (currentExercise.question_format) {
+          case "multiple_choice":
+          case "fill_in_blank":
+          case "listening":
+          case "image_select":
+            userAnswerForAPI = selectedAnswer;
+            break;
+          case "reorder":
+            userAnswerForAPI = reorderedWords.join(" ");
+            break;
+          case "match":
+            userAnswerForAPI = matchedPairs;
+            break;
+          default:
+            userAnswerForAPI = selectedAnswer;
+        }
+
+        loseHeartOnWrongAnswer(
+          currentExercise._id,
+          userAnswerForAPI || {},
+          answerTime
+        );
+
+        // Check if user has no hearts left after losing one
+        if (currentHearts <= 1) {
+          // <= 1 because we just lost one heart
+          setTimeout(() => {
+            Alert.alert(
+              "Hết tim rồi! 💔",
+              "Bạn đã hết tim. Bài học sẽ kết thúc và tiến độ của bạn sẽ được lưu.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    // End the lesson early due to no hearts
+                    handleExerciseComplete();
+                  },
+                },
+              ],
+              { cancelable: false }
+            );
+          }, 1000); // Give time for the UI to update the heart display
+        }
       }
 
       // Track this exercise's answer and time for API submission
@@ -284,7 +332,14 @@ export default function ExerciseScreen() {
     } catch (error) {
       console.error("Error validating answer:", error);
       Alert.alert("Error", "Failed to validate answer. Please try again.");
-      setLives((prev) => Math.max(0, prev - 1));
+
+      // In case of error, still submit with available data
+      const answerTime = Math.round((Date.now() - exerciseStartTime) / 1000);
+      loseHeartOnWrongAnswer(
+        currentExercise._id,
+        { error: "validation_failed" },
+        answerTime
+      );
     }
 
     setTimeout(() => {
@@ -519,9 +574,9 @@ export default function ExerciseScreen() {
               {currentExerciseIndex + 1} / {totalExercises}
             </Text>
             <View style={styles.livesContainer}>
-              {[...Array(5)].map((_, i) => (
+              {[...Array(maxHearts)].map((_, i) => (
                 <Text key={i} style={styles.heart}>
-                  {i < lives ? "❤️" : "🤍"}
+                  {i < currentHearts ? "❤️" : "🤍"}
                 </Text>
               ))}
             </View>

@@ -1,5 +1,6 @@
 // Re-export all home components for easy importing
 export { HomeHeader } from "./HomeHeader";
+export { LearningPathView } from "./LearningPathView";
 export { LessonCircle } from "./LessonCircle";
 export { ErrorState, LoadingState } from "./LoadingErrorStates";
 export { ProgressCircle } from "./ProgressCircle";

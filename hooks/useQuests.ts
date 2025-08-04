@@ -1,122 +1,134 @@
 import { useCallback, useEffect, useState } from "react";
-import QuestService from "../services/questService";
-import { FormattedQuest, QuestReward } from "../types/quest";
+import {
+  formatQuestForUI,
+  FormattedQuest,
+  QuestReward,
+  useGetDailyQuestsQuery,
+  useQuestManager,
+  UserQuest,
+} from "../services/questApiService";
 
 interface UseQuestsReturn {
   quests: FormattedQuest[];
   loading: boolean;
   error: string | null;
-  refreshQuests: () => Promise<void>;
+  refreshQuests: () => void;
   updateQuestProgress: (questId: string, progress: number) => Promise<void>;
   completeQuest: (questId: string) => Promise<QuestReward | null>;
   claimReward: (questId: string) => Promise<QuestReward | null>;
+  // New quest initialization features
+  isInitializing: boolean;
+  questsCreated: boolean;
+  initializationError: string | null;
 }
 
-export const useQuests = (): UseQuestsReturn => {
-  const [quests, setQuests] = useState<FormattedQuest[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+interface UseQuestsOptions {
+  autoInitialize?: boolean;
+  onQuestsCreated?: (quests: FormattedQuest[]) => void;
+  onInitializationError?: (error: any) => void;
+}
 
-  const fetchQuests = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+export const useQuests = (options: UseQuestsOptions = {}): UseQuestsReturn => {
+  const {
+    autoInitialize = true,
+    onQuestsCreated,
+    onInitializationError,
+  } = options;
 
-      const userQuests = await QuestService.getDailyQuests();
+  // RTK Query hooks
+  const {
+    data: userQuests,
+    isLoading,
+    error: apiError,
+    refetch,
+  } = useGetDailyQuestsQuery();
 
-      if (!userQuests || userQuests.length === 0) {
-        setQuests([]);
-        return;
-      }
+  // Quest initialization hook
+  const { ensureQuestsExist, isLoadingQuests, isCreatingQuests } =
+    useQuestManager();
 
-      const formattedQuests = userQuests.map((quest, index) => {
+  // Quest initialization state
+  const [questsCreated, setQuestsCreated] = useState(false);
+  const [initializationError, setInitializationError] = useState<string | null>(
+    null
+  );
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Auto-initialize quests when component mounts (if enabled)
+  useEffect(() => {
+    if (autoInitialize && !hasInitialized) {
+      const initializeQuests = async () => {
         try {
-          return QuestService.formatQuestForUI(quest);
-        } catch (formatError) {
-          console.error(
-            `[useQuests] Error formatting quest ${quest._id}:`,
-            formatError
-          );
-          throw new Error(
-            `Lỗi xử lý dữ liệu nhiệm vụ: ${
-              formatError instanceof Error
-                ? formatError.message
-                : "Unknown error"
-            }`
-          );
+          console.log("🎯 Auto-initializing daily quests...");
+          const result = await ensureQuestsExist();
+
+          if (result.success) {
+            setQuestsCreated(result.created);
+            setInitializationError(null);
+
+            if (result.created && onQuestsCreated) {
+              const formattedQuests = result.quests.map(formatQuestForUI);
+              onQuestsCreated(formattedQuests);
+            }
+
+            console.log(
+              `✅ Quest initialization complete. Created: ${result.created}, Count: ${result.quests.length}`
+            );
+          } else {
+            setInitializationError(
+              result.error || "Failed to initialize quests"
+            );
+            if (onInitializationError) {
+              onInitializationError(result.error);
+            }
+          }
+        } catch (error) {
+          console.error("❌ Quest initialization failed:", error);
+          setInitializationError("Quest initialization failed");
+          if (onInitializationError) {
+            onInitializationError(error);
+          }
+        } finally {
+          setHasInitialized(true);
         }
-      });
+      };
 
-      setQuests(formattedQuests);
-    } catch (err) {
-      console.error("[useQuests] Error in fetchQuests:", err);
-
-      let errorMessage = "Không thể tải nhiệm vụ";
-
-      if (err instanceof Error) {
-        if (
-          err.message.includes("Server đang gặp sự cố") ||
-          err.message.includes("Phiên đăng nhập") ||
-          err.message.includes("Không tìm thấy") ||
-          err.message.includes("Không thể kết nối") ||
-          err.message.includes("Lỗi xử lý dữ liệu")
-        ) {
-          errorMessage = err.message;
-        } else {
-          errorMessage = `Không thể tải nhiệm vụ: ${err.message}`;
-        }
-      }
-
-      // Don't set error state if we're in development - quest service will use mock data
-      if (!__DEV__) {
-        setError(errorMessage);
-      } else {
-        console.log(
-          "[useQuests] Development mode: continuing despite error, quest service should provide mock data"
-        );
-        setError(null);
-      }
-
-      console.error("[useQuests] Error details:", {
-        message: errorMessage,
-        originalError: err,
-        stack: err instanceof Error ? err.stack : "No stack trace",
-      });
-    } finally {
-      setLoading(false);
+      initializeQuests();
     }
-  }, []);
+  }, [
+    autoInitialize,
+    hasInitialized,
+    ensureQuestsExist,
+    onQuestsCreated,
+    onInitializationError,
+  ]);
 
-  const refreshQuests = useCallback(async () => {
-    await fetchQuests();
-  }, [fetchQuests]);
+  // Transform data for UI
+  const quests: FormattedQuest[] = userQuests
+    ? userQuests.map((quest: UserQuest) => formatQuestForUI(quest))
+    : [];
+
+  // Error handling
+  const error = apiError
+    ? apiError && "data" in apiError
+      ? String(apiError.data)
+      : "Không thể tải nhiệm vụ"
+    : null;
+
+  const refreshQuests = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   const updateQuestProgress = useCallback(
     async (questId: string, progress: number) => {
       try {
-        const updatedQuest = await QuestService.updateQuestProgress(
-          questId,
-          progress
+        // TODO: Implement updateQuestProgressMutation when available
+        console.log(
+          `[useQuests] Update quest progress: ${questId} -> ${progress}`
         );
-
-        const formattedQuest = QuestService.formatQuestForUI(updatedQuest);
-
-        setQuests((prevQuests) => {
-          const newQuests = prevQuests.map((quest) => {
-            if (quest.id === questId) {
-              return formattedQuest;
-            }
-            return quest;
-          });
-          return newQuests;
-        });
+        // await updateQuestProgressMutation({ questId, progress }).unwrap();
       } catch (err) {
         console.error("[useQuests] Error updating quest progress:", err);
-        console.error("[useQuests] Update error details:", {
-          questId,
-          progress,
-          error: err instanceof Error ? err.message : "Unknown error",
-        });
         throw err;
       }
     },
@@ -126,27 +138,13 @@ export const useQuests = (): UseQuestsReturn => {
   const completeQuest = useCallback(
     async (questId: string): Promise<QuestReward | null> => {
       try {
-        const result = await QuestService.completeQuest(questId);
-
-        const formattedQuest = QuestService.formatQuestForUI(result.quest);
-
-        setQuests((prevQuests) => {
-          const newQuests = prevQuests.map((quest) => {
-            if (quest.id === questId) {
-              return formattedQuest;
-            }
-            return quest;
-          });
-          return newQuests;
-        });
-
-        return result.reward;
+        // TODO: Implement completeQuestMutation when available
+        console.log(`[useQuests] Complete quest: ${questId}`);
+        // const result = await completeQuestMutation(questId).unwrap();
+        // return result.reward;
+        return null;
       } catch (err) {
         console.error("[useQuests] Error completing quest:", err);
-        console.error("[useQuests] Completion error details:", {
-          questId,
-          error: err instanceof Error ? err.message : "Unknown error",
-        });
         return null;
       }
     },
@@ -156,40 +154,35 @@ export const useQuests = (): UseQuestsReturn => {
   const claimReward = useCallback(
     async (questId: string): Promise<QuestReward | null> => {
       try {
-        const result = await QuestService.claimQuestReward(questId);
-
-        if (result.success) {
-          await refreshQuests();
-          return result.reward;
-        } else {
-          console.warn("[useQuests] Reward claim was not successful");
-          return null;
-        }
+        // TODO: Implement claimQuestRewardMutation when available
+        console.log(`[useQuests] Claim reward: ${questId}`);
+        // const result = await claimQuestRewardMutation(questId).unwrap();
+        // if (result.success) {
+        //   return result.reward;
+        // } else {
+        //   console.warn("[useQuests] Reward claim was not successful");
+        //   return null;
+        // }
+        return null;
       } catch (err) {
         console.error("[useQuests] Error claiming reward:", err);
-        console.error("[useQuests] Claim error details:", {
-          questId,
-          error: err instanceof Error ? err.message : "Unknown error",
-        });
         return null;
       }
     },
-    [refreshQuests]
+    []
   );
-
-  useEffect(() => {
-    fetchQuests();
-  }, [fetchQuests]);
-
-  useEffect(() => {}, [quests, loading, error]);
 
   return {
     quests,
-    loading,
+    loading: isLoading,
     error,
     refreshQuests,
     updateQuestProgress,
     completeQuest,
     claimReward,
+    // New quest initialization features
+    isInitializing: isLoadingQuests || isCreatingQuests,
+    questsCreated,
+    initializationError,
   };
 };

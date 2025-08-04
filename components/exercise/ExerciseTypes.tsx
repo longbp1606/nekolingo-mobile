@@ -1,5 +1,14 @@
-import React, { useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useAudioPlayer } from "expo-audio";
+import React, { useRef, useState } from "react";
+import {
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Colors, Sizes } from "../../constants";
 
 // Define types for different exercise formats
@@ -40,7 +49,7 @@ interface BaseExerciseProps {
   getAnswerTextStyle: (answer: string) => any[];
 }
 
-// Multiple Choice / Fill in Blank / Listening Exercise Component
+// Multiple Choice / Fill in Blank Exercise Component (Non-Listening)
 export const TextOptionsExercise: React.FC<BaseExerciseProps> = ({
   exercise,
   selectedAnswer,
@@ -64,6 +73,209 @@ export const TextOptionsExercise: React.FC<BaseExerciseProps> = ({
           <Text style={getAnswerTextStyle(option)}>{option}</Text>
         </TouchableOpacity>
       ))}
+    </View>
+  );
+};
+
+// Listening Exercise Component with Audio Player
+export const ListeningExercise: React.FC<BaseExerciseProps> = ({
+  exercise,
+  selectedAnswer,
+  onAnswerSelect,
+  isAnswerSubmitted,
+  isProcessing,
+  getAnswerStyle,
+  getAnswerTextStyle,
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const player = useAudioPlayer(exercise.audio_url || "");
+  const playerRef = useRef(player);
+  const isMountedRef = useRef(true);
+  const options = exercise.options as string[];
+
+  // Update player ref when player changes
+  React.useEffect(() => {
+    playerRef.current = player;
+  }, [player]);
+
+  // Track component mount status
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Track player readiness and reset when exercise changes
+  React.useEffect(() => {
+    const resetPlayer = async () => {
+      if (!isMountedRef.current) return;
+
+      try {
+        setIsPlayerReady(false);
+        setIsLoading(false);
+
+        const currentPlayer = playerRef.current;
+        if (currentPlayer && exercise.audio_url) {
+          // Stop any current playback safely
+          try {
+            if (currentPlayer.playing) {
+              currentPlayer.pause();
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+          } catch (pauseError) {
+            console.log("Player already paused or disposed");
+          }
+
+          // Reset position safely
+          try {
+            currentPlayer.seekTo(0);
+          } catch (seekError) {
+            console.log("Could not seek player");
+          }
+
+          // Wait a bit for the player to be ready
+          await new Promise((resolve) => setTimeout(resolve, 200));
+
+          if (isMountedRef.current) {
+            setIsPlayerReady(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error resetting player:", error);
+        if (isMountedRef.current) {
+          setIsPlayerReady(false);
+        }
+      }
+    };
+
+    resetPlayer();
+  }, [exercise._id, exercise.audio_url]);
+
+  // Cleanup when component unmounts
+  React.useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+
+      // Cleanup with timeout to avoid race conditions
+      setTimeout(() => {
+        try {
+          const currentPlayer = playerRef.current;
+          if (currentPlayer) {
+            try {
+              if (currentPlayer.playing) {
+                currentPlayer.pause();
+              }
+            } catch (cleanupError) {
+              // Player already disposed, ignore
+            }
+          }
+        } catch (error) {
+          // Ignore cleanup errors when component is unmounted
+        }
+      }, 100);
+    };
+  }, []);
+
+  const playAudio = async (playbackRate: number = 1.0) => {
+    if (!exercise.audio_url) {
+      Alert.alert("Error", "No audio available for this exercise");
+      return;
+    }
+
+    if (!isPlayerReady || !isMountedRef.current) {
+      Alert.alert("Error", "Audio player is not ready yet. Please try again.");
+      return;
+    }
+
+    const currentPlayer = playerRef.current;
+    if (!currentPlayer) {
+      Alert.alert("Error", "Audio player is not available");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // If audio is currently playing, stop it first
+      try {
+        if (currentPlayer.playing) {
+          currentPlayer.pause();
+          // Add a small delay to ensure the pause is processed
+          await new Promise((resolve) => setTimeout(resolve, 150));
+        }
+      } catch (pauseError) {
+        console.log("Player pause issue, continuing...");
+      }
+
+      // Reset to beginning and set playback rate
+      try {
+        currentPlayer.seekTo(0);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        currentPlayer.playbackRate = playbackRate;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Play the audio
+        currentPlayer.play();
+      } catch (playError) {
+        throw new Error("Failed to play audio");
+      }
+    } catch (error) {
+      console.error("Error playing audio:", error);
+      Alert.alert("Error", "Failed to play audio. Please try again.");
+    } finally {
+      // Keep loading state for a bit longer to prevent rapid button presses
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
+      }, 300);
+    }
+  };
+
+  return (
+    <View>
+      {/* Audio Player Section */}
+      <View style={styles.audioPlayerContainer}>
+        <TouchableOpacity
+          style={[
+            styles.playButton,
+            (isLoading || !isPlayerReady) && styles.playButtonDisabled,
+          ]}
+          onPress={() => playAudio(1.0)}
+          disabled={isLoading || !isPlayerReady}
+        >
+          <Ionicons
+            name={(() => {
+              try {
+                return playerRef.current && playerRef.current.playing
+                  ? "volume-high"
+                  : "play";
+              } catch {
+                return "play";
+              }
+            })()}
+            size={32}
+            color={Colors.background}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Options */}
+      <View style={styles.optionsContainer}>
+        {options.map((option: string, index: number) => (
+          <TouchableOpacity
+            key={index}
+            style={getAnswerStyle(option)}
+            onPress={() => onAnswerSelect(option)}
+            disabled={isAnswerSubmitted || isProcessing}
+          >
+            <Text style={getAnswerTextStyle(option)}>{option}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
@@ -543,6 +755,31 @@ const styles = StyleSheet.create({
     color: Colors.background,
     fontSize: Sizes.caption,
     fontWeight: "bold",
+  },
+
+  // Audio player styles for listening exercises
+  audioPlayerContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: Sizes.xl,
+    gap: Sizes.md,
+  },
+  playButton: {
+    backgroundColor: Colors.primary,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 3,
+    shadowColor: Colors.textDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  playButtonDisabled: {
+    opacity: 0.6,
   },
 
   // Reorder exercise styles

@@ -19,14 +19,15 @@ export function QuestHeader({
     <View style={styles.headerContainer}>
       <View style={styles.headerContent}>
         <View style={styles.titleContainer}>
-          <Text style={styles.monthLabel}>THÁNG BẢY</Text>
+          <Text style={styles.monthLabel}>THÁNG TÁM</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
           <View style={styles.timeContainer}>
-            <Text style={styles.timeIcon}><FontAwesome name="clock-o" size={18} color="#FFF" /></Text>
+            <Text style={styles.timeIcon}>
+              <FontAwesome name="clock-o" size={18} color="#FFF" />
+            </Text>
             <Text style={styles.timeText}>{timeRemaining}</Text>
           </View>
-
         </View>
 
         {characterAvatar && (
@@ -39,7 +40,6 @@ export function QuestHeader({
             </View>
           </View>
         )}
-
       </View>
       {/* <QuestMission
         title="Kiếm 30 Điểm nhiệm vụ"
@@ -51,7 +51,6 @@ export function QuestHeader({
           paddingRight: 20, paddingLeft: 20, marginLeft: 0, marginRight: 0,
         }}
       /> */}
-
     </View>
   );
 }

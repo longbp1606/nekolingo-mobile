@@ -41,13 +41,6 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
-          name="auth/register"
-          options={{
-            title: "Register",
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
           name="auth/forgot-password"
           options={{
             title: "Forgot Password",

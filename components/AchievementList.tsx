@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -11,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { ROUTES } from "../config/routes";
-import { useAchievements } from "../hooks/useAchievement";
+import { useGetUserAchievementsQuery } from "../services/achievementApiService";
 
 const theme = {
   color: {
@@ -48,6 +47,24 @@ interface AchievementListProps {
   limit?: number;
 }
 
+// Local interface for processed achievement data
+interface ProcessedAchievement {
+  id: string;
+  level: string;
+  className: string;
+  icon: string;
+  name: string;
+  progressText: string;
+  percentage: number;
+  desc: string;
+  isUnlocked: boolean;
+  unlockDate?: string | null;
+  condition: {
+    type: string;
+    value?: number;
+  };
+}
+
 const AchievementList: React.FC<AchievementListProps> = ({
   userId,
   userStats,
@@ -56,21 +73,109 @@ const AchievementList: React.FC<AchievementListProps> = ({
 }) => {
   const router = useRouter();
 
-  // Only call useAchievements if we have a valid userId
+  // Only call useGetUserAchievementsQuery if we have a valid userId
   const shouldFetchAchievements = Boolean(
     userId && userId !== "null" && userId !== "undefined"
   );
 
-  const { achievements, loading, error, refreshAchievements } = useAchievements(
-    {
-      userId: shouldFetchAchievements ? userId : undefined,
-      userStats: shouldFetchAchievements ? userStats : undefined,
-    }
-  );
+  const {
+    data: rawAchievements,
+    isLoading: loading,
+    error: apiError,
+    refetch,
+  } = useGetUserAchievementsQuery(userId || "", {
+    skip: !shouldFetchAchievements,
+  });
+
+  // Process achievements to match the expected format
+  const achievements: ProcessedAchievement[] = rawAchievements
+    ? rawAchievements.map((ach) => {
+        const total = ach.condition.value || 1;
+        const percentage = ach.is_unlocked
+          ? 100
+          : Math.min((ach.progress / total) * 100, 100);
+
+        return {
+          id: ach._id,
+          level: ach.is_unlocked ? "completed" : "locked",
+          className: ach.is_unlocked
+            ? "achievement-completed"
+            : "achievement-locked",
+          icon: ach.icon,
+          name: ach.title,
+          progressText: ach.progress_text, // Use the API's progress_text directly
+          percentage,
+          desc: ach.description,
+          isUnlocked: ach.is_unlocked,
+          unlockDate: ach.unlock_at,
+          condition: {
+            type: ach.condition.type,
+            value: ach.condition.value,
+          },
+        };
+      })
+    : [];
 
   const displayedAchievements = limit
     ? achievements.slice(0, limit)
     : achievements;
+
+  // Handle error
+  const error = (() => {
+    if (!apiError) return null;
+
+    console.log("🎯 API Error details:", apiError);
+
+    if (typeof apiError === "string") {
+      return apiError;
+    }
+
+    if (apiError && typeof apiError === "object") {
+      // RTK Query error object
+      if ("status" in apiError) {
+        console.log("🎯 RTK Query error status:", apiError.status);
+        console.log("🎯 RTK Query error data:", apiError.data);
+
+        if (apiError.status === "FETCH_ERROR") {
+          return "Network error - Cannot connect to server";
+        }
+
+        if (apiError.status === 401) {
+          return "Authentication failed - Please login again";
+        }
+
+        if (
+          apiError.data &&
+          typeof apiError.data === "object" &&
+          "message" in apiError.data
+        ) {
+          return String(apiError.data.message);
+        }
+
+        return `API Error: ${apiError.status}`;
+      }
+
+      if ("message" in apiError) {
+        return String(apiError.message);
+      }
+    }
+
+    return "Failed to fetch achievements";
+  })();
+
+  const refreshAchievements = () => {
+    refetch();
+  };
+
+  // Debug logging
+  console.log("🎯 AchievementList Debug:", {
+    shouldFetchAchievements,
+    userId,
+    achievementsCount: achievements.length,
+    firstAchievement: achievements[0],
+    loading,
+    error,
+  });
 
   // If no userId provided, don't render anything
   if (!shouldFetchAchievements) {
@@ -79,6 +184,25 @@ const AchievementList: React.FC<AchievementListProps> = ({
 
   const getIconWrapperStyle = (className: string) => {
     switch (className) {
+      case "achievement-completed":
+        return [
+          styles.achievementIconWrapper,
+          {
+            backgroundColor: theme.color.bgGreen,
+            borderColor: theme.color.green,
+            borderBottomColor: theme.color.green,
+          },
+        ];
+      case "achievement-locked":
+        return [
+          styles.achievementIconWrapper,
+          {
+            backgroundColor: "#f5f5f5",
+            borderColor: "#e0e0e0",
+            borderBottomColor: "#e0e0e0",
+            opacity: 0.6,
+          },
+        ];
       case "fire":
         return [
           styles.achievementIconWrapper,
@@ -113,6 +237,10 @@ const AchievementList: React.FC<AchievementListProps> = ({
 
   const getTextColor = (className: string) => {
     switch (className) {
+      case "achievement-completed":
+        return theme.color.green;
+      case "achievement-locked":
+        return "#999";
       case "fire":
         return theme.color.red;
       case "scholar":
@@ -189,51 +317,97 @@ const AchievementList: React.FC<AchievementListProps> = ({
           </View>
 
           <View style={styles.achievementListWrapper}>
-            {displayedAchievements.map((ach, index) => (
-              <View key={ach.id} style={styles.achievementItem}>
-                {index > 0 && <View style={styles.separator} />}
+            {displayedAchievements.map(
+              (ach: ProcessedAchievement, index: number) => (
+                <View key={ach.id} style={styles.achievementItem}>
+                  {index > 0 && <View style={styles.separator} />}
 
-                <View style={getIconWrapperStyle(ach.className)}>
-                  <Image source={ach.icon} style={styles.achievementImg} />
-                  <Text
-                    style={[
-                      styles.achievementText,
-                      { color: getTextColor(ach.className) },
-                    ]}
-                  >
-                    {ach.level}
-                  </Text>
-                </View>
+                  <View style={getIconWrapperStyle(ach.className)}>
+                    {ach.isUnlocked ? (
+                      <>
+                        <Text style={styles.achievementEmoji}>
+                          {typeof ach.icon === "string" ? ach.icon : "🏆"}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.achievementText,
+                            { color: getTextColor(ach.className) },
+                          ]}
+                        >
+                          Hoàn thành
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={styles.achievementLockIcon}>🔒</Text>
+                        <Text
+                          style={[
+                            styles.achievementText,
+                            { color: getTextColor(ach.className) },
+                          ]}
+                        >
+                          Chưa hoàn thành
+                        </Text>
+                      </>
+                    )}
+                  </View>
 
-                <View style={styles.achievementInfo}>
-                  <View style={styles.achievementLead}>
-                    <Text style={styles.achievementName}>{ach.name}</Text>
-                    <Text style={styles.achievementDesc}>
-                      {ach.progressText}
+                  <View style={styles.achievementInfo}>
+                    <View style={styles.achievementLead}>
+                      <Text
+                        style={[
+                          styles.achievementName,
+                          !ach.isUnlocked && { opacity: 0.7 },
+                        ]}
+                      >
+                        {typeof ach.name === "string"
+                          ? ach.name
+                          : "Achievement"}
+                      </Text>
+                      {!ach.isUnlocked && (
+                        <Text style={styles.achievementStatus}>
+                          Cần hoàn thành
+                        </Text>
+                      )}
+                    </View>
+
+                    <View style={styles.achievementProgress}>
+                      <View style={styles.progressBar}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            {
+                              width: `${
+                                typeof ach.percentage === "number"
+                                  ? ach.percentage
+                                  : 0
+                              }%`,
+                              backgroundColor: ach.isUnlocked
+                                ? theme.color.green
+                                : ach.percentage > 0
+                                ? theme.color.primary
+                                : "#e0e0e0",
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.progressText}>
+                        {ach.isUnlocked ? "✓" : ach.progressText}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.achievementDescBottom,
+                        !ach.isUnlocked && { opacity: 0.6 },
+                      ]}
+                    >
+                      {typeof ach.desc === "string" ? ach.desc : "Description"}
                     </Text>
                   </View>
-
-                  <View style={styles.achievementProgress}>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${ach.percentage}%`,
-                            backgroundColor:
-                              ach.percentage === 100
-                                ? theme.color.green
-                                : "#FFA500",
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-
-                  <Text style={styles.achievementDescBottom}>{ach.desc}</Text>
                 </View>
-              </View>
-            ))}
+              )
+            )}
           </View>
         </View>
       </View>
@@ -308,6 +482,17 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
     marginBottom: 8,
   },
+  achievementEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  achievementLockIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+    textAlign: "center",
+    opacity: 0.7,
+  },
   achievementText: {
     fontSize: 12,
     fontWeight: "600",
@@ -331,6 +516,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.color.description,
   },
+  achievementStatus: {
+    fontSize: 12,
+    color: theme.color.description,
+    fontStyle: "italic",
+  },
   achievementDescBottom: {
     fontSize: 14,
     color: theme.color.description,
@@ -352,6 +542,13 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
     minWidth: 2,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.color.description,
+    minWidth: 40,
+    textAlign: "right",
   },
   unlockedText: {
     fontSize: 16,

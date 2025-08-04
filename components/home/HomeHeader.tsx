@@ -19,12 +19,39 @@ export const HomeHeader: React.FC<HeaderProps> = ({
   userLevel,
   userName,
 }) => {
+  // Convert title to Vietnamese format
+  const getVietnameseTitle = (title: string) => {
+    const sectionMatch = title.match(/Section (\d+)/);
+    const unitMatch = title.match(/Unit (\d+)/);
+
+    if (sectionMatch && unitMatch) {
+      return `Phần ${String(sectionMatch[1])}, Bài ${String(unitMatch[1])}`;
+    }
+    return title || "";
+  };
+
   return (
     <View style={[styles.header, { backgroundColor }]}>
       <View style={styles.headerContent}>
-        <Text style={styles.headerTitle}>{title}</Text>
-        <Text style={styles.headerSubtitle}>{subtitle}</Text>
-        {/* {userLevel && <Text style={styles.userLevel}>Level {userLevel}</Text>} */}
+        <View style={styles.greetingSection}>
+          <Text style={styles.greeting}>
+            Xin chào, {userName || "Học viên"}! 👋
+          </Text>
+          {userLevel && (
+            <View style={styles.levelBadge}>
+              <Ionicons name="star" size={16} color="#FFD700" />
+              <Text style={styles.levelText}>
+                Cấp độ {String(userLevel || 1)}
+              </Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.headerTitle}>{getVietnameseTitle(title)}</Text>
+        <Text style={styles.headerSubtitle}>{subtitle || ""}</Text>
+        <View style={styles.pathIndicator}>
+          <Ionicons name="map" size={18} color="rgba(255,255,255,0.9)" />
+          <Text style={styles.pathText}>Hành trình học tập của bạn</Text>
+        </View>
       </View>
       <TouchableOpacity style={styles.bookmarkButton} onPress={onListPress}>
         <Ionicons name="list" size={24} color="white" />
@@ -43,19 +70,49 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    minHeight: 80,
+    minHeight: 120,
   },
   headerContent: {
     flex: 1,
     paddingRight: 60, // Give space for the button
-    minHeight: 60,
+    minHeight: 80,
+  },
+  greetingSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  greeting: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    flex: 1,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  levelBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
+  levelText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 4,
   },
   headerTitle: {
     color: "white",
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 4,
-    lineHeight: 28,
+    marginBottom: 6,
+    lineHeight: 30,
     textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
@@ -63,12 +120,27 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     color: "white",
     fontSize: 16,
-    marginBottom: 2,
+    marginBottom: 10,
     opacity: 0.9,
     lineHeight: 20,
     textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  pathIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    alignSelf: "flex-start",
+  },
+  pathText: {
+    color: "white",
+    fontSize: 13,
+    fontWeight: "500",
+    marginLeft: 6,
   },
   userLevel: {
     color: "white",

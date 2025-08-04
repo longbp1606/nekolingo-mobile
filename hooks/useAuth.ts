@@ -4,10 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../config/store";
 import {
   LoginRequest,
-  RegisterRequest,
+  SetupRegisterRequest,
   useGetProfileQuery,
   useLoginMutation,
-  useRegisterMutation,
+  useSetupRegisterMutation,
 } from "../services/auth/authApiService";
 import {
   clearAuthData,
@@ -22,7 +22,7 @@ export const useAuth = () => {
   const router = useRouter();
 
   const [loginMutation] = useLoginMutation();
-  const [registerMutation] = useRegisterMutation();
+  const [setupRegisterMutation] = useSetupRegisterMutation();
 
   // Skip profile query if no token
   const {
@@ -66,18 +66,9 @@ export const useAuth = () => {
     }
   };
 
-  const register = async (userData: RegisterRequest) => {
+  const setupRegister = async (userData: SetupRegisterRequest) => {
     try {
-      const result = await registerMutation(userData).unwrap();
-      // Store the auth data in AsyncStorage and Redux
-      await dispatch(storeAuthData(result.data)).unwrap();
-
-      // Fetch user profile after successful registration and wait for it
-      const profileResult = await refetchProfile();
-      if (profileResult.data?.data) {
-        dispatch(setUser(profileResult.data.data));
-      }
-
+      const result = await setupRegisterMutation(userData).unwrap();
       return result;
     } catch (error) {
       throw error;
@@ -111,7 +102,7 @@ export const useAuth = () => {
 
     // Auth actions
     login,
-    register,
+    setupRegister,
     logout: logoutUser,
     refetchProfile, // Expose refetch to allow manual refresh
   };

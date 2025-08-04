@@ -13,9 +13,11 @@ import { useSelector } from "react-redux";
 import { Button, Card, ProgressBar } from "../../components";
 import { RootState } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
+import { useHearts } from "../../hooks/useHearts";
 import {
   ExplainAnswerResponse,
   useExplainAnswerMutation,
+  useGetWeeklyStreakQuery,
 } from "../../services/progressApiService";
 
 interface ExerciseResult {
@@ -30,6 +32,7 @@ interface ExerciseResult {
 
 export default function ExerciseResultScreen() {
   const router = useRouter();
+  const { handleHeartCheck } = useHearts();
   const params = useLocalSearchParams<{
     lessonId: string;
     score: string;
@@ -48,6 +51,14 @@ export default function ExerciseResultScreen() {
 
   // API mutation for explaining answers
   const [explainAnswer] = useExplainAnswerMutation();
+
+  // Get weekly streak data to check if today already has a streak
+  const { data: weeklyStreakData } = useGetWeeklyStreakQuery(
+    user?.id || user?._id || "",
+    {
+      skip: !user?.id && !user?._id,
+    }
+  );
 
   const fetchExplanationsForIncorrectExercises = async () => {
     if (loadingExplanations || (!user?.id && !user?._id)) return;
@@ -96,16 +107,70 @@ export default function ExerciseResultScreen() {
       ? (result.correctAnswers / result.totalQuestions) * 100
       : 0;
 
+  // Helper function to check if today allows streak increase
+  const canIncreaseStreakToday = () => {
+    if (!weeklyStreakData?.week) {
+      console.log("[StreakCheck] No weekly streak data available");
+      return true; // Allow if no data (fallback)
+    }
+
+    const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
+    const todayEntry = weeklyStreakData.week.find((day) => day.date === today);
+
+    console.log("[StreakCheck] Today's date:", today);
+    console.log("[StreakCheck] Today's entry:", todayEntry);
+
+    // If today's status is "missed", user cannot increase streak anymore today
+    if (todayEntry?.status === "missed") {
+      console.log(
+        "[StreakCheck] Today is marked as 'missed' - cannot increase streak"
+      );
+      return false;
+    }
+
+    // If today already has "streak", user already got their streak for today
+    if (todayEntry?.status === "streak") {
+      console.log(
+        "[StreakCheck] Today already has streak - cannot increase again"
+      );
+      return false;
+    }
+
+    // If today's status is undefined or "freeze", user can potentially get a streak
+    console.log("[StreakCheck] Today allows streak increase");
+    return true;
+  };
+
+  // Determine if we should show celebration - only if streak increased AND today allows streak increase
+  const shouldShowCelebration =
+    result.streakIncreased && canIncreaseStreakToday();
+
+  console.log("[StreakCheck] result.streakIncreased:", result.streakIncreased);
+  console.log("[StreakCheck] shouldShowCelebration:", shouldShowCelebration);
+
+  /*
+   * Streak Celebration Logic:
+   * - Show celebration ONLY if:
+   *   1. Exercise result indicates streak increased (result.streakIncreased = true)
+   *   2. AND today allows streak increase (canIncreaseStreakToday() = true)
+   *
+   * Today's status meanings:
+   * - "streak": User already has a streak for today → NO celebration
+   * - "missed": User missed their chance for today → NO celebration
+   * - "freeze": User used a freeze → CAN get celebration if completing exercise
+   * - undefined: No data for today → CAN get celebration (fallback)
+   */
+
   useEffect(() => {
-    // Show streak celebration if streak increased
-    if (result.streakIncreased) {
+    // Show streak celebration if streak increased and today didn't already have a streak
+    if (shouldShowCelebration) {
       const timer = setTimeout(() => {
         setShowStreakCelebration(true);
       }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [result.streakIncreased]);
+  }, [shouldShowCelebration]);
 
   const handleContinue = () => {
     if (showStreakCelebration) {
@@ -125,7 +190,10 @@ export default function ExerciseResultScreen() {
   };
 
   const handleTryAgain = () => {
-    router.push(`/exercise/${result.lessonId}`);
+    // Check hearts before allowing retry
+    handleHeartCheck(() => {
+      router.push(`/exercise/${result.lessonId}`);
+    });
   };
 
   return (
@@ -187,7 +255,7 @@ export default function ExerciseResultScreen() {
             />
           </View>
 
-          {result.streakIncreased && (
+          {shouldShowCelebration && (
             <View style={styles.streakContainer}>
               <Text style={styles.streakIcon}>🔥</Text>
               <Text style={styles.streakText}>Streak increased!</Text>

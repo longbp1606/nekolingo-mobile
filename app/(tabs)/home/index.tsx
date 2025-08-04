@@ -7,12 +7,13 @@ import {
   ErrorState,
   getUnitColor,
   HomeHeader,
+  LearningPathView,
   Lesson,
   LoadingState,
   Unit,
-  UnitsScrollView,
 } from "../../../components/home";
 import { useAuth } from "../../../hooks/useAuth";
+import { useHearts } from "../../../hooks/useHearts";
 import {
   useGetCourseMetadataQuery,
   useGetCoursesQuery,
@@ -95,7 +96,11 @@ const createUnitsFromCourseMetadata = (
           title: displayTitle,
           lessonId: lesson._id,
           xpReward: lesson.xp_reward,
-          lessonType: lesson.type,
+          lessonType: Array.isArray(lesson.type)
+            ? lesson.type
+            : lesson.type
+            ? [lesson.type]
+            : undefined,
           mode: lesson.mode,
           originalTitle: lesson.title, // Keep full title for modal/details
         };
@@ -116,6 +121,7 @@ const HomeScreen: React.FC = () => {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const { user } = useAuth();
+  const { handleHeartCheck } = useHearts();
 
   // Fallback: get courses if user doesn't have currentCourse set
   const { data: coursesResponse, isLoading: coursesLoading } =
@@ -180,7 +186,7 @@ const HomeScreen: React.FC = () => {
   if (metadataLoading || coursesLoading || !user) {
     return (
       <SafeAreaView style={styles.container}>
-        <LoadingState message="Loading course data..." />
+        <LoadingState message="Đang tải dữ liệu khóa học..." />
       </SafeAreaView>
     );
   }
@@ -189,7 +195,7 @@ const HomeScreen: React.FC = () => {
   if (metadataError || !courseId) {
     return (
       <SafeAreaView style={styles.container}>
-        <ErrorState message="Error loading course data. Please try again." />
+        <ErrorState message="Lỗi khi tải dữ liệu khóa học. Vui lòng thử lại." />
       </SafeAreaView>
     );
   }
@@ -243,7 +249,10 @@ const HomeScreen: React.FC = () => {
   const handleStartLesson = (lessonId: string) => {
     setModalVisible(false);
     if (lessonId) {
-      navigateToLesson(lessonId);
+      // Check hearts before navigation
+      handleHeartCheck(() => {
+        navigateToLesson(lessonId);
+      });
     } else {
       console.warn("Cannot start lesson: No lesson ID provided");
     }
@@ -253,25 +262,31 @@ const HomeScreen: React.FC = () => {
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: getUnitColor(currentUnit.id) },
+        { backgroundColor: getUnitColor(currentUnit?.id || 1) },
       ]}
     >
       <StatsBar />
 
       <HomeHeader
-        title={currentUnit.title}
-        subtitle={currentUnit.subtitle}
-        backgroundColor={getUnitColor(currentUnit.id)}
+        title={currentUnit?.title || "Unit 1"}
+        subtitle={currentUnit?.subtitle || "Get started"}
+        backgroundColor={getUnitColor(currentUnit?.id || 1)}
         onListPress={() => router.push("/lessons")}
         userLevel={user?.currentLevel}
         userName={user?.username}
       />
 
-      <UnitsScrollView
-        units={units}
-        onScroll={handleScroll}
+      <LearningPathView
+        units={units || []}
         onLessonPress={handleLessonPress}
-        scrollViewRef={scrollViewRef}
+        currentUnit={
+          currentUnit || {
+            id: 1,
+            title: "Unit 1",
+            subtitle: "Get started",
+            lessons: [],
+          }
+        }
       />
 
       <LessonModal

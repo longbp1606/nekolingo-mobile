@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
+import { useHearts } from "../hooks/useHearts";
 import FriendsScreen from "./FriendsScreen";
 import PopupInvite from "./PopupInvite";
 
@@ -64,6 +65,7 @@ interface StatItemData {
 
 const StatsBar: React.FC = () => {
   const { user } = useAuth();
+  const { currentHearts, maxHearts } = useHearts();
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course>({
     id: "en",
@@ -165,18 +167,18 @@ const StatsBar: React.FC = () => {
           style={styles.heartIcon}
         />
       ),
-      value: user?.hearts || 5,
+      value: currentHearts,
       color: "#FF4B4B",
       modal: {
         title: "Hearts",
         content:
-          user?.hearts === 5
+          currentHearts === maxHearts
             ? "You have full hearts!"
             : "Practice to restore hearts",
         description: "Keep learning",
         type: "hearts",
-        hearts: user?.hearts || 5,
-        maxHearts: 5,
+        hearts: currentHearts,
+        maxHearts: maxHearts,
       },
     },
     {

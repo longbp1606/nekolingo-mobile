@@ -36,7 +36,7 @@ export default function StreakCelebrationScreen() {
     router.push("/(tabs)/streak" as any);
   };
 
-  const currentStreak = user?.current_streak || 0;
+  const currentStreak = user?.streakDays || user?.streak_days || 0;
   const streakGoal = Math.ceil(currentStreak / 5) * 5; // Next milestone (5, 10, 15, etc.)
 
   return (
@@ -108,7 +108,7 @@ export default function StreakCelebrationScreen() {
             <Text style={styles.statLabel}>Longest Streak</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{user?.total_xp || 0}</Text>
+            <Text style={styles.statValue}>{user?.xp || 0}</Text>
             <Text style={styles.statLabel}>Total XP</Text>
           </View>
         </View>

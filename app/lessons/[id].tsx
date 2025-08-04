@@ -10,11 +10,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card } from "../../components";
 import { Colors, Sizes } from "../../constants";
+import { useHearts } from "../../hooks/useHearts";
 import { useGetLessonByIdQuery } from "../../services/lessonApiService";
 
 export default function LessonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { handleHeartCheck } = useHearts();
 
   const {
     data: currentLesson,
@@ -29,11 +31,14 @@ export default function LessonDetailScreen() {
   );
 
   const handleStartLesson = () => {
-    // Navigate to the exercise screen with lesson data
-    router.push({
-      pathname: "/exercise/[lessonId]",
-      params: { lessonId: id },
-    } as any);
+    // Check hearts before navigation
+    handleHeartCheck(() => {
+      // Navigate to the exercise screen with lesson data
+      router.push({
+        pathname: "/exercise/[lessonId]",
+        params: { lessonId: id },
+      } as any);
+    });
   };
 
   if (loading) {

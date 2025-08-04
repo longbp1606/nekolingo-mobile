@@ -1,8 +1,10 @@
 export const ROUTES = {
   // Auth
   LOGIN: "/auth/login",
-  REGISTER: "/auth/register",
   FORGOT_PASSWORD: "/auth/forgot-password",
+
+  // Onboarding
+  ONBOARDING_REGISTER: "/onboarding/register",
 
   // Main App Routes
   HOME: "/(tabs)/home",
@@ -12,6 +14,7 @@ export const ROUTES = {
   LEADERBOARD: "/(tabs)/leaderboard",
   PROFILE: "/(tabs)/profile",
   ALLACHIEVEMENT: "/allachievement",
+  TRANSACTION_HISTORY: "/transaction-history",
 
   // Exercise Flow
   EXERCISE_RESULT: "/exercise/result",

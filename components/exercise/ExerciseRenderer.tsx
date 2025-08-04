@@ -4,6 +4,7 @@ import { Colors, Sizes } from "../../constants";
 import {
   Exercise,
   ImageOptionsExercise,
+  ListeningExercise,
   MatchExercise,
   ReorderExercise,
   TextOptionsExercise,
@@ -50,9 +51,21 @@ export const ExerciseRenderer: React.FC<ExerciseRendererProps> = ({
     switch (exercise.question_format) {
       case "multiple_choice":
       case "fill_in_blank":
-      case "listening":
         return (
           <TextOptionsExercise
+            exercise={exercise}
+            selectedAnswer={selectedAnswer}
+            onAnswerSelect={onAnswerSelect}
+            isAnswerSubmitted={isAnswerSubmitted}
+            isProcessing={isProcessing}
+            getAnswerStyle={getAnswerStyle}
+            getAnswerTextStyle={getAnswerTextStyle}
+          />
+        );
+
+      case "listening":
+        return (
+          <ListeningExercise
             exercise={exercise}
             selectedAnswer={selectedAnswer}
             onAnswerSelect={onAnswerSelect}

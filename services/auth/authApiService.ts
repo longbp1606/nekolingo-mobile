@@ -21,7 +21,7 @@ export interface User {
   currentTopic: string;
   currentLesson: string;
   createdAt: string;
-  
+
   // Snake case fields from actual API response
   current_level?: number;
   weekly_xp?: number;
@@ -37,7 +37,7 @@ export interface User {
   current_course?: string;
   current_topic?: string;
   current_lesson?: string;
-  
+
   // Legacy fields for backward compatibility
   _id?: string;
   full_name?: string;
@@ -59,22 +59,19 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-  full_name: string;
-  profile_language: string;
-  learning_language: string;
-}
-
 export interface SetupRegisterRequest {
   email: string;
   password: string;
-  username?: string;
+  username: string;
   language_from: string;
   language_to: string;
   current_level: number;
+}
+
+export interface SetupRegisterResponse {
+  data: null;
+  pagination: null;
+  message: string;
 }
 
 export interface AuthData {
@@ -105,30 +102,16 @@ export const authApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
-    register: builder.mutation<AuthResponse, RegisterRequest>({
-      query: (userData) => ({
-        url: "/auth/register",
-        method: "POST",
-        body: userData,
-      }),
-      invalidatesTags: ["User"],
-    }),
-    setupRegister: builder.mutation<AuthResponse, SetupRegisterRequest>({
+    setupRegister: builder.mutation<
+      SetupRegisterResponse,
+      SetupRegisterRequest
+    >({
       query: (userData) => ({
         url: "/auth/setup-register",
         method: "POST",
         body: userData,
       }),
       invalidatesTags: ["User"],
-    }),
-    validateToken: builder.query<{ valid: boolean; user: User }, string>({
-      query: (token) => ({
-        url: "/auth/validate",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      providesTags: ["User"],
     }),
     getProfile: builder.query<ProfileResponse, void>({
       query: () => "/auth/profile",
@@ -147,9 +130,7 @@ export const authApi = apiSlice.injectEndpoints({
 
 export const {
   useLoginMutation,
-  useRegisterMutation,
   useSetupRegisterMutation,
-  useValidateTokenQuery,
   useGetProfileQuery,
   useUpdateProfileMutation,
 } = authApi;
