@@ -85,10 +85,11 @@ const createUnitsFromCourseMetadata = (
         }
 
         // Truncate long lesson titles for better display
+        const safeTitle = String(lesson.title || "");
         const displayTitle =
-          lesson.title.length > 35
-            ? lesson.title.substring(0, 32) + "..."
-            : lesson.title;
+          safeTitle.length > 35
+            ? safeTitle.substring(0, 32) + "..."
+            : safeTitle;
 
         return {
           icon: icon as any,
@@ -102,14 +103,14 @@ const createUnitsFromCourseMetadata = (
             ? [lesson.type]
             : undefined,
           mode: lesson.mode,
-          originalTitle: lesson.title, // Keep full title for modal/details
+          originalTitle: safeTitle, // Keep full title for modal/details
         };
       }) || [];
 
     return {
       id: index + 1,
       title: `Section ${index + 1}, Unit ${index + 1}`,
-      subtitle: topic.title,
+      subtitle: String(topic.title || ""),
       lessons,
     };
   });

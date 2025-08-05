@@ -286,14 +286,14 @@ const StatsBar: React.FC = () => {
         <View key={day} style={styles.calendarDay}>
           {isActive ? (
             <View style={styles.activeDay}>
-              <Text style={styles.activeDayText}>{day}</Text>
+              <Text style={styles.activeDayText}>{String(day)}</Text>
             </View>
           ) : isStreakDay ? (
             <View style={styles.streakDay}>
-              <Text style={styles.streakDayText}>{day}</Text>
+              <Text style={styles.streakDayText}>{String(day)}</Text>
             </View>
           ) : (
-            <Text style={styles.inactiveDayText}>{day}</Text>
+            <Text style={styles.inactiveDayText}>{String(day)}</Text>
           )}
         </View>
       );
@@ -317,7 +317,9 @@ const StatsBar: React.FC = () => {
             source={require(`../assets/images/united-states.png`)}
             style={styles.courseFlagLarge}
           />
-          <Text style={styles.courseName}>{selectedCourse.name}</Text>
+          <Text style={styles.courseName}>
+            {String(selectedCourse.name || "")}
+          </Text>
         </View>
 
         <TouchableOpacity style={styles.addCourseButton}>

@@ -139,7 +139,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
               </View>
             </View>
             <Text style={styles.modalTitle}>
-              {lesson.originalTitle || lesson.title}
+              {String(lesson.originalTitle || lesson.title || "")}
             </Text>
             {lesson.mode === "personalized" && (
               <View style={styles.personalizedBadge}>
@@ -151,7 +151,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
               <View style={styles.lessonTypesContainer}>
                 {lesson.lessonType.map((type, index) => (
                   <View key={index} style={styles.typeTag}>
-                    <Text style={styles.typeText}>{type}</Text>
+                    <Text style={styles.typeText}>{String(type || "")}</Text>
                   </View>
                 ))}
               </View>
@@ -170,8 +170,8 @@ const LessonModal: React.FC<LessonModalProps> = ({
                 ]}
               >
                 {lesson.lessonId
-                  ? `BẮT ĐẦU +${lesson.xpReward || 25} XP`
-                  : `DEMO - BẮT ĐẦU +${lesson.xpReward || 25} XP`}
+                  ? `BẮT ĐẦU +${String(lesson.xpReward || 25)} XP`
+                  : `DEMO - BẮT ĐẦU +${String(lesson.xpReward || 25)} XP`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -196,7 +196,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
               </View>
             </View>
             <Text style={styles.modalTitle}>
-              {lesson.originalTitle || lesson.title}
+              {String(lesson.originalTitle || lesson.title || "")}
             </Text>
             {lesson.mode === "personalized" && (
               <View style={styles.personalizedBadge}>
@@ -242,7 +242,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
               </View>
             </View>
             <Text style={[styles.modalTitle, { color: "#666" }]}>
-              {lesson.title}
+              {String(lesson.title || "")}
             </Text>
             <Text style={[styles.modalSubtitle, { color: "#666" }]}>
               Hãy hoàn thành tất cả các cấp độ phía trên để mở khóa nhé!

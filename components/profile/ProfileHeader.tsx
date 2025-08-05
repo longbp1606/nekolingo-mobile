@@ -59,8 +59,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onLogout }) => {
       </View>
 
       <View style={styles.profileInfo}>
-        <Text style={styles.profileName}>{displayName}</Text>
-        <Text style={styles.profileHandle}>{handle}</Text>
+        <Text style={styles.profileName}>{String(displayName || "")}</Text>
+        <Text style={styles.profileHandle}>{String(handle || "")}</Text>
         <Text style={styles.profileJoinDate}>
           {formatJoinDate(user.createdAt || user.created_at)}
         </Text>

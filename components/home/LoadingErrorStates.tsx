@@ -14,7 +14,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
 }) => {
   return (
     <View style={styles.loadingContainer}>
-      <Text style={styles.loadingText}>{message}</Text>
+      <Text style={styles.loadingText}>{String(message || "Loading...")}</Text>
     </View>
   );
 };
@@ -24,7 +24,9 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 }) => {
   return (
     <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>{message}</Text>
+      <Text style={styles.errorText}>
+        {String(message || "Error loading data")}
+      </Text>
     </View>
   );
 };

@@ -1,6 +1,13 @@
 import { FontAwesome } from "@expo/vector-icons";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface MissionSectionProps {
   title: string;
@@ -17,11 +24,13 @@ export function MissionSection({
   return (
     <View style={styles.sectionContainer}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionTitle}>{String(title || "")}</Text>
         {timeRemaining && (
           <View style={styles.timeContainer}>
-            <Text style={styles.timeIcon}><FontAwesome name="clock-o" size={18} color="#FFA500" /></Text>
-            <Text style={styles.timeText}>{timeRemaining}</Text>
+            <Text style={styles.timeIcon}>
+              <FontAwesome name="clock-o" size={18} color="#FFA500" />
+            </Text>
+            <Text style={styles.timeText}>{String(timeRemaining || "")}</Text>
           </View>
         )}
       </View>
@@ -47,28 +56,34 @@ export function FriendQuestCard({
   isCompleted,
   onFindFriends,
 }: FriendQuestCardProps) {
-  const progressPercentage = total > 0 ? Math.min((progress / total) * 100, 100) : 0;
-  const isQuestCompleted = isCompleted !== undefined ? isCompleted : progress >= total;
-  
+  const progressPercentage =
+    total > 0 ? Math.min((progress / total) * 100, 100) : 0;
+  const isQuestCompleted =
+    isCompleted !== undefined ? isCompleted : progress >= total;
+
   return (
     <View style={styles.friendQuestContainer}>
-      <Text style={styles.friendQuestTitle}>{title}</Text>
+      <Text style={styles.friendQuestTitle}>{String(title || "")}</Text>
 
       <View style={styles.progressContainer}>
         <View style={styles.row}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+            <View
+              style={[styles.progressFill, { width: `${progressPercentage}%` }]}
+            />
           </View>
-          <Image 
+          <Image
             source={
               isCompleted
-                ? require('../../assets/images/treasure-open.png')
-                : require('../../assets/images/treasure-close.png')
-            } 
-            style={styles.iconChest} 
+                ? require("../../assets/images/treasure-open.png")
+                : require("../../assets/images/treasure-close.png")
+            }
+            style={styles.iconChest}
           />
         </View>
-        <Text style={styles.progressText}>{progress} / {total}</Text>
+        <Text style={styles.progressText}>
+          {progress} / {total}
+        </Text>
       </View>
 
       {onFindFriends && (
@@ -89,30 +104,30 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   progressBar: {
-    width: '90%',
+    width: "90%",
     height: 20,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: "#E5E5E5",
     borderRadius: 5,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginRight: 10,
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: '#2B70C9',
+    height: "100%",
+    backgroundColor: "#2B70C9",
   },
   progressText: {
-    position: 'absolute',
+    position: "absolute",
     top: 11,
     right: 155,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4B4B4B',
+    fontWeight: "bold",
+    color: "#4B4B4B",
   },
   iconChest: {
     width: 44,
@@ -152,7 +167,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     padding: 20,
     borderWidth: 2,
-    borderColor: '#e5e5e5',
+    borderColor: "#e5e5e5",
   },
   friendQuestTitle: {
     fontSize: 16,

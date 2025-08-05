@@ -21,13 +21,17 @@ export const HomeHeader: React.FC<HeaderProps> = ({
 }) => {
   // Convert title to Vietnamese format
   const getVietnameseTitle = (title: string) => {
+    if (!title || typeof title !== "string") {
+      return "";
+    }
+
     const sectionMatch = title.match(/Section (\d+)/);
     const unitMatch = title.match(/Unit (\d+)/);
 
     if (sectionMatch && unitMatch) {
       return `Phần ${String(sectionMatch[1])}, Bài ${String(unitMatch[1])}`;
     }
-    return title || "";
+    return title;
   };
 
   return (
@@ -35,7 +39,7 @@ export const HomeHeader: React.FC<HeaderProps> = ({
       <View style={styles.headerContent}>
         <View style={styles.greetingSection}>
           <Text style={styles.greeting}>
-            Xin chào, {userName || "Học viên"}! 👋
+            Xin chào, {String(userName || "Học viên")}! 👋
           </Text>
           {userLevel && (
             <View style={styles.levelBadge}>
@@ -46,8 +50,10 @@ export const HomeHeader: React.FC<HeaderProps> = ({
             </View>
           )}
         </View>
-        <Text style={styles.headerTitle}>{getVietnameseTitle(title)}</Text>
-        <Text style={styles.headerSubtitle}>{subtitle || ""}</Text>
+        <Text style={styles.headerTitle}>
+          {String(getVietnameseTitle(title) || "")}
+        </Text>
+        <Text style={styles.headerSubtitle}>{String(subtitle || "")}</Text>
         <View style={styles.pathIndicator}>
           <Ionicons name="map" size={18} color="rgba(255,255,255,0.9)" />
           <Text style={styles.pathText}>Hành trình học tập của bạn</Text>

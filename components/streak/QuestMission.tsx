@@ -1,6 +1,13 @@
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface QuestMissionProps {
   title: string;
@@ -33,9 +40,9 @@ export function QuestMission({
           style={[
             styles.progressSegment,
             {
-              left: '0%',
+              left: "0%",
               width: `${progressPercentage}%`,
-              backgroundColor: isCompleted ? '#58CC02' : '#FFA500',
+              backgroundColor: isCompleted ? "#58CC02" : "#FFA500",
             },
           ]}
         />
@@ -57,12 +64,12 @@ export function QuestMission({
               {
                 left: `${currentStart}%`,
                 width: `${segmentEnd - currentStart}%`,
-                backgroundColor: '#58CC02',
+                backgroundColor: "#58CC02",
               },
             ]}
           />
         );
-      } else if (progress > currentStart * total / 100) {
+      } else if (progress > (currentStart * total) / 100) {
         const currentProgress = Math.min(progressPercentage, segmentEnd);
         segments.push(
           <View
@@ -72,7 +79,7 @@ export function QuestMission({
               {
                 left: `${currentStart}%`,
                 width: `${currentProgress - currentStart}%`,
-                backgroundColor: '#FFA500',
+                backgroundColor: "#FFA500",
               },
             ]}
           />
@@ -104,13 +111,15 @@ export function QuestMission({
             styles.lockIcon,
             {
               left: `${lockPosition}%`,
-            }
+            },
           ]}
         >
-          <View style={[
-            styles.lockCircle,
-            { backgroundColor: isUnlocked ? '#58CC02' : '#E5E5E5' }
-          ]}>
+          <View
+            style={[
+              styles.lockCircle,
+              { backgroundColor: isUnlocked ? "#58CC02" : "#E5E5E5" },
+            ]}
+          >
             {isUnlocked ? (
               <FontAwesome5 name="unlock" size={14} color="white" />
             ) : (
@@ -125,9 +134,12 @@ export function QuestMission({
   };
 
   return (
-    <TouchableOpacity style={[styles.missionContainer, style]} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.missionContainer, style]}
+      onPress={onPress}
+    >
       <View style={styles.missionContent}>
-        <Text style={styles.missionTitle}>{title}</Text>
+        <Text style={styles.missionTitle}>{String(title || "")}</Text>
 
         <View style={styles.progressContainer}>
           <View style={styles.row}>
@@ -138,13 +150,15 @@ export function QuestMission({
             <Image
               source={
                 isCompleted
-                  ? require('../../assets/images/treasure-open.png')
-                  : require('../../assets/images/treasure-close.png')
+                  ? require("../../assets/images/treasure-open.png")
+                  : require("../../assets/images/treasure-close.png")
               }
               style={styles.iconChest}
             />
           </View>
-          <Text style={styles.progressText}>{progress} / {total}</Text>
+          <Text style={styles.progressText}>
+            {String(progress || 0)} / {String(total || 0)}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -183,31 +197,31 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   progressBar: {
-    width: '90%',
+    width: "90%",
     height: 20,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: "#E5E5E5",
     borderRadius: 5,
-    overflow: 'visible',
+    overflow: "visible",
     marginRight: 10,
-    position: 'relative',
+    position: "relative",
   },
   progressSegment: {
-    position: 'absolute',
-    height: '100%',
+    position: "absolute",
+    height: "100%",
     borderRadius: 5,
   },
   progressText: {
-    position: 'absolute',
+    position: "absolute",
     top: 11,
     right: 155,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4B4B4B',
+    fontWeight: "bold",
+    color: "#4B4B4B",
   },
   iconContainer: {
     alignItems: "center",
@@ -228,7 +242,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   lockIcon: {
-    position: 'absolute',
+    position: "absolute",
     top: -6,
     transform: [{ translateX: -12 }],
     zIndex: 10,
@@ -237,10 +251,10 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     borderRadius: 17.5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: "#FFF",
   },
   lockText: {
     fontSize: 10,

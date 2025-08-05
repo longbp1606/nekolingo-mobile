@@ -20,13 +20,13 @@ export function QuestHeader({
       <View style={styles.headerContent}>
         <View style={styles.titleContainer}>
           <Text style={styles.monthLabel}>THÁNG TÁM</Text>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <Text style={styles.title}>{String(title || "")}</Text>
+          <Text style={styles.subtitle}>{String(subtitle || "")}</Text>
           <View style={styles.timeContainer}>
             <Text style={styles.timeIcon}>
               <FontAwesome name="clock-o" size={18} color="#FFF" />
             </Text>
-            <Text style={styles.timeText}>{timeRemaining}</Text>
+            <Text style={styles.timeText}>{String(timeRemaining || "")}</Text>
           </View>
         </View>
 
