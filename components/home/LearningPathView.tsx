@@ -265,15 +265,13 @@ export const LearningPathView: React.FC<LearningPathViewProps> = ({
 
         {/* Lesson label */}
         <View style={styles.lessonLabel}>
-          <Text style={styles.lessonNumber}>
-            Bài {String(point.lessonIndex + 1)}
-          </Text>
+          <Text style={styles.lessonNumber}>Bài {point.lessonIndex + 1}</Text>
         </View>
 
         {/* XP reward badge */}
         {lesson.xpReward && lesson.status !== "locked" && (
           <View style={styles.xpBadge}>
-            <Text style={styles.xpText}>+{String(lesson.xpReward || 0)}</Text>
+            <Text style={styles.xpText}>+{lesson.xpReward}</Text>
           </View>
         )}
 
@@ -312,9 +310,9 @@ export const LearningPathView: React.FC<LearningPathViewProps> = ({
             style={[styles.unitHeaderGradient, { backgroundColor: "#6C63FF" }]}
           >
             <Text style={styles.unitTitle}>
-              Phần {String(index + 1)}, Bài {String(index + 1)}
+              Phần {index + 1}, Bài {index + 1}
             </Text>
-            <Text style={styles.unitSubtitle}>{unit.subtitle || ""}</Text>
+            <Text style={styles.unitSubtitle}>{unit.subtitle}</Text>
           </View>
         </View>
       );
@@ -341,7 +339,7 @@ export const LearningPathView: React.FC<LearningPathViewProps> = ({
         <View style={styles.progressHeader}>
           <Text style={styles.progressTitle}>Tiến độ học tập</Text>
           <Text style={styles.progressPercent}>
-            {String(Math.round(progressPercent))}%
+            {Math.round(progressPercent)}%
           </Text>
         </View>
         <View style={styles.progressBar}>
@@ -350,7 +348,7 @@ export const LearningPathView: React.FC<LearningPathViewProps> = ({
           />
         </View>
         <Text style={styles.progressText}>
-          {String(completedLessons)}/{String(totalLessons)} bài học hoàn thành
+          {completedLessons}/{totalLessons} bài học hoàn thành
         </Text>
       </View>
     );
