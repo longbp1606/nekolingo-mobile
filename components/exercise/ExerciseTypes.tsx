@@ -70,7 +70,7 @@ export const TextOptionsExercise: React.FC<BaseExerciseProps> = ({
           onPress={() => onAnswerSelect(option)}
           disabled={isAnswerSubmitted || isProcessing}
         >
-          <Text style={getAnswerTextStyle(option)}>{option}</Text>
+          <Text style={getAnswerTextStyle(option)}>{String(option || "")}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -272,7 +272,9 @@ export const ListeningExercise: React.FC<BaseExerciseProps> = ({
             onPress={() => onAnswerSelect(option)}
             disabled={isAnswerSubmitted || isProcessing}
           >
-            <Text style={getAnswerTextStyle(option)}>{option}</Text>
+            <Text style={getAnswerTextStyle(option)}>
+              {String(option || "")}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -326,9 +328,11 @@ export const ImageOptionsExercise: React.FC<BaseExerciseProps> = ({
               console.error("Image load error:", error.nativeEvent.error);
             }}
           />
-          <Text style={styles.imageOptionText}>{option.value}</Text>
+          <Text style={styles.imageOptionText}>
+            {String(option.value || "")}
+          </Text>
           <View style={styles.optionNumber}>
-            <Text style={styles.optionNumberText}>{index + 1}</Text>
+            <Text style={styles.optionNumberText}>{String(index + 1)}</Text>
           </View>
         </TouchableOpacity>
       ))}
@@ -456,7 +460,7 @@ export const ReorderExercise: React.FC<ReorderExerciseProps> = React.memo(
               onPress={() => handleSlotClick(index)}
               disabled={isAnswerSubmitted || isProcessing}
             >
-              <Text style={styles.slotText}>{word || "___"}</Text>
+              <Text style={styles.slotText}>{String(word || "___")}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -470,7 +474,7 @@ export const ReorderExercise: React.FC<ReorderExerciseProps> = React.memo(
               onPress={() => handleWordClick(word, index)}
               disabled={isAnswerSubmitted || isProcessing}
             >
-              <Text style={styles.wordText}>{word}</Text>
+              <Text style={styles.wordText}>{String(word || "")}</Text>
             </TouchableOpacity>
           ))}
         </View>

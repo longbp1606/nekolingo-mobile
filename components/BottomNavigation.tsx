@@ -85,7 +85,7 @@ export default function BottomNavigation() {
               isActiveRoute(item.route) && styles.activeNavLabel,
             ]}
           >
-            {item.label}
+            {String(item.label || "")}
           </Text>
         </TouchableOpacity>
       ))}
