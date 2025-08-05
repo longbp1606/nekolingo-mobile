@@ -66,6 +66,20 @@ export default function ExerciseScreen() {
     Date.now()
   );
 
+  // Store detailed exercise results for displaying in results screen
+  const [detailedResults, setDetailedResults] = useState<
+    Array<{
+      exerciseId: string;
+      question: string;
+      userAnswer: any;
+      correctAnswer: any;
+      isCorrect: boolean;
+      questionFormat: string;
+      options?: any[];
+      answerTime: number;
+    }>
+  >([]);
+
   // Get user from Redux store
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -246,7 +260,9 @@ export default function ExerciseScreen() {
         });
       } else {
         // Calculate answer time and user answer for API submission
-        const answerTime = Math.round((Date.now() - exerciseStartTime) / 1000);
+        const answerTimeSeconds = Math.round(
+          (Date.now() - exerciseStartTime) / 1000
+        );
         let userAnswerForAPI: any;
 
         switch (currentExercise.question_format) {
@@ -269,7 +285,7 @@ export default function ExerciseScreen() {
         loseHeartOnWrongAnswer(
           currentExercise._id,
           userAnswerForAPI || {},
-          answerTime
+          answerTimeSeconds
         );
 
         // Check if user has no hearts left after losing one
@@ -295,7 +311,8 @@ export default function ExerciseScreen() {
       }
 
       // Track this exercise's answer and time for API submission
-      const answerTime = Math.round((Date.now() - exerciseStartTime) / 1000); // Convert to seconds
+      const answerTime = Date.now() - exerciseStartTime; // Keep in milliseconds for detailed results
+      const answerTimeSeconds = Math.round(answerTime / 1000); // Convert to seconds for API
       let userAnswerForAPI: any;
 
       switch (currentExercise.question_format) {
@@ -318,27 +335,43 @@ export default function ExerciseScreen() {
       const exerciseAnswer: ExerciseAnswer = {
         exercise_id: currentExercise._id,
         user_answer: userAnswerForAPI,
-        answer_time: answerTime,
+        answer_time: answerTimeSeconds, // Use seconds for API
       };
 
       console.log("Tracking exercise:", {
         exerciseId: currentExercise._id,
         userAnswer: userAnswerForAPI,
-        answerTime: answerTime,
+        answerTime: answerTimeSeconds, // Log seconds for readability
         isCorrect: isCorrect,
       });
 
       setExerciseProgress((prev) => [...prev, exerciseAnswer]);
+
+      // Store detailed result for results screen
+      const detailedResult = {
+        exerciseId: currentExercise._id,
+        question: currentExercise.question,
+        userAnswer: userAnswerForAPI,
+        correctAnswer: currentExercise.correct_answer,
+        isCorrect: isCorrect,
+        questionFormat: currentExercise.question_format,
+        options: currentExercise.options,
+        answerTime: answerTime, // Use milliseconds for detailed results
+      };
+
+      setDetailedResults((prev) => [...prev, detailedResult]);
     } catch (error) {
       console.error("Error validating answer:", error);
       Alert.alert("Error", "Failed to validate answer. Please try again.");
 
       // In case of error, still submit with available data
-      const answerTime = Math.round((Date.now() - exerciseStartTime) / 1000);
+      const answerTimeSeconds = Math.round(
+        (Date.now() - exerciseStartTime) / 1000
+      );
       loseHeartOnWrongAnswer(
         currentExercise._id,
         { error: "validation_failed" },
-        answerTime
+        answerTimeSeconds
       );
     }
 
@@ -401,6 +434,7 @@ export default function ExerciseScreen() {
         xpEarned: xpEarned.toString(),
         perfectLesson: perfectLesson.toString(),
         streakIncreased: streakIncreased.toString(),
+        detailedResults: JSON.stringify(detailedResults),
       };
 
       router.push({
@@ -425,6 +459,7 @@ export default function ExerciseScreen() {
                 xpEarned: xpEarned.toString(),
                 perfectLesson: perfectLesson.toString(),
                 streakIncreased: streakIncreased.toString(),
+                detailedResults: JSON.stringify(detailedResults),
               };
 
               router.push({

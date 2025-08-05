@@ -15,8 +15,8 @@ import { RootState } from "../../config/store";
 import { Colors, Sizes } from "../../constants";
 import { useHearts } from "../../hooks/useHearts";
 import {
-  ExplainAnswerResponse,
-  useExplainAnswerMutation,
+  // ExplainAnswerResponse,
+  // useExplainAnswerMutation,
   useGetWeeklyStreakQuery,
 } from "../../services/progressApiService";
 
@@ -30,6 +30,17 @@ interface ExerciseResult {
   streakIncreased?: boolean;
 }
 
+interface DetailedExerciseResult {
+  exerciseId: string;
+  question: string;
+  userAnswer: any;
+  correctAnswer: any;
+  isCorrect: boolean;
+  questionFormat: string;
+  options?: any[];
+  answerTime: number;
+}
+
 export default function ExerciseResultScreen() {
   const router = useRouter();
   const { handleHeartCheck } = useHearts();
@@ -41,16 +52,22 @@ export default function ExerciseResultScreen() {
     xpEarned: string;
     perfectLesson?: string;
     streakIncreased?: string;
+    detailedResults?: string;
   }>();
 
   const { user } = useSelector((state: RootState) => state.auth);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [showExplanations, setShowExplanations] = useState(false);
-  const [explanations, setExplanations] = useState<ExplainAnswerResponse[]>([]);
-  const [loadingExplanations, setLoadingExplanations] = useState(false);
+  // const [explanations, setExplanations] = useState<ExplainAnswerResponse[]>([]);
+  // const [loadingExplanations, setLoadingExplanations] = useState(false);
 
   // API mutation for explaining answers
-  const [explainAnswer] = useExplainAnswerMutation();
+  // const [explainAnswer] = useExplainAnswerMutation();
+
+  // Parse detailed results if provided
+  const detailedResults: DetailedExerciseResult[] = params.detailedResults
+    ? JSON.parse(params.detailedResults)
+    : [];
 
   // Get weekly streak data to check if today already has a streak
   const { data: weeklyStreakData } = useGetWeeklyStreakQuery(
@@ -60,26 +77,26 @@ export default function ExerciseResultScreen() {
     }
   );
 
-  const fetchExplanationsForIncorrectExercises = async () => {
-    if (loadingExplanations || (!user?.id && !user?._id)) return;
+  // const fetchExplanationsForIncorrectExercises = async () => {
+  //   if (loadingExplanations || (!user?.id && !user?._id)) return;
 
-    setLoadingExplanations(true);
-    try {
-      // Since we can't easily get the specific exercises from navigation params,
-      // we'll show a button that lets users get explanations for their mistakes
-      // This could be improved by passing more data or creating an endpoint
-      // to get recent exercise mistakes for a lesson
-      console.log("Fetching explanations for lesson:", result.lessonId);
+  //   setLoadingExplanations(true);
+  //   try {
+  //     // Since we can't easily get the specific exercises from navigation params,
+  //     // we'll show a button that lets users get explanations for their mistakes
+  //     // This could be improved by passing more data or creating an endpoint
+  //     // to get recent exercise mistakes for a lesson
+  //     console.log("Fetching explanations for lesson:", result.lessonId);
 
-      // For now, we'll show a placeholder or implement a different approach
-      setExplanations([]);
-      setShowExplanations(true);
-    } catch (error) {
-      console.error("Error fetching explanations:", error);
-    } finally {
-      setLoadingExplanations(false);
-    }
-  };
+  //     // For now, we'll show a placeholder or implement a different approach
+  //     setExplanations([]);
+  //     setShowExplanations(true);
+  //   } catch (error) {
+  //     console.error("Error fetching explanations:", error);
+  //   } finally {
+  //     setLoadingExplanations(false);
+  //   }
+  // };
 
   const getResultImage = () => {
     if (result.perfectLesson) return require("../../assets/images/grade.png");
@@ -180,14 +197,14 @@ export default function ExerciseResultScreen() {
     }
   };
 
-  const handleShowExplanations = async () => {
-    if (!showExplanations) {
-      setLoadingExplanations(true);
-      await fetchExplanationsForIncorrectExercises();
-      setLoadingExplanations(false);
-    }
-    setShowExplanations(!showExplanations);
-  };
+  // const handleShowExplanations = async () => {
+  //   if (!showExplanations) {
+  //     setLoadingExplanations(true);
+  //     await fetchExplanationsForIncorrectExercises();
+  //     setLoadingExplanations(false);
+  //   }
+  //   setShowExplanations(!showExplanations);
+  // };
 
   const handleTryAgain = () => {
     // Check hearts before allowing retry
@@ -275,7 +292,7 @@ export default function ExerciseResultScreen() {
         )}
 
         {/* Detailed Results Button */}
-        {result.correctAnswers < result.totalQuestions && (
+        {detailedResults.length > 0 && (
           <Card style={styles.explanationCard}>
             <Button
               title={
@@ -284,64 +301,84 @@ export default function ExerciseResultScreen() {
                   : "Show Detailed Results"
               }
               variant="outline"
-              onPress={handleShowExplanations}
+              onPress={() => setShowExplanations(!showExplanations)}
               style={styles.explanationButton}
             />
 
             {showExplanations && (
               <View style={styles.explanationsContainer}>
-                {loadingExplanations ? (
-                  <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingText}>
-                      Loading explanations...
-                    </Text>
-                  </View>
-                ) : explanations.length > 0 ? (
-                  <ScrollView style={styles.explanationsList}>
-                    {explanations.map((explanation, index) => (
-                      <View key={index} style={styles.explanationItem}>
+                <ScrollView style={styles.explanationsList}>
+                  {detailedResults.map((result, index) => (
+                    <View key={index} style={styles.explanationItem}>
+                      <View style={styles.questionHeader}>
                         <Text style={styles.explanationTitle}>
                           Question {index + 1}
                         </Text>
-                        <Text style={styles.explanationText}>
-                          {explanation.explanation}
+                        <Text
+                          style={[
+                            styles.resultIndicator,
+                            result.isCorrect
+                              ? styles.correctIndicator
+                              : styles.incorrectIndicator,
+                          ]}
+                        >
+                          {result.isCorrect ? "✓ Correct" : "✗ Incorrect"}
                         </Text>
-                        {explanation.grammar && (
-                          <View style={styles.grammarSection}>
-                            <Text style={styles.grammarTitle}>
-                              Grammar Point:
-                            </Text>
-                            <Text style={styles.grammarText}>
-                              {explanation.grammar}
-                            </Text>
+                      </View>
+
+                      <Text style={styles.questionText}>{result.question}</Text>
+
+                      {result.questionFormat === "multiple_choice" &&
+                        result.options && (
+                          <View style={styles.optionsContainer}>
+                            {result.options.map((option, optIndex) => (
+                              <View
+                                key={optIndex}
+                                style={[
+                                  styles.optionItem,
+                                  option === result.correctAnswer &&
+                                    styles.correctOption,
+                                  option === result.userAnswer &&
+                                    !result.isCorrect &&
+                                    styles.incorrectOption,
+                                ]}
+                              >
+                                <Text style={styles.optionText}>{option}</Text>
+                              </View>
+                            ))}
                           </View>
                         )}
-                        <View style={styles.answerComparison}>
-                          <Text style={styles.correctAnswerLabel}>
-                            Correct:
-                          </Text>
-                          <Text style={styles.correctAnswer}>
-                            {typeof explanation.correct_answer === "string"
-                              ? explanation.correct_answer
-                              : JSON.stringify(explanation.correct_answer)}
-                          </Text>
-                          <Text style={styles.userAnswerLabel}>
-                            Your answer:
-                          </Text>
-                          <Text style={styles.userAnswer}>
-                            {typeof explanation.user_answer === "string"
-                              ? explanation.user_answer
-                              : JSON.stringify(explanation.user_answer)}
-                          </Text>
-                        </View>
+
+                      <View style={styles.answerComparison}>
+                        <Text style={styles.correctAnswerLabel}>
+                          Correct Answer:
+                        </Text>
+                        <Text style={styles.correctAnswer}>
+                          {typeof result.correctAnswer === "string"
+                            ? result.correctAnswer
+                            : JSON.stringify(result.correctAnswer)}
+                        </Text>
+                        <Text style={styles.userAnswerLabel}>Your Answer:</Text>
+                        <Text
+                          style={[
+                            styles.userAnswer,
+                            result.isCorrect
+                              ? styles.correctUserAnswer
+                              : styles.incorrectUserAnswer,
+                          ]}
+                        >
+                          {typeof result.userAnswer === "string"
+                            ? result.userAnswer
+                            : JSON.stringify(result.userAnswer)}
+                        </Text>
                       </View>
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <Text style={styles.noExplanationsText}>
-                    No explanations available for incorrect answers.
-                  </Text>
-                )}
+
+                      <Text style={styles.timeText}>
+                        Time: {(result.answerTime / 1000).toFixed(1)}s
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
             )}
           </Card>
@@ -596,5 +633,69 @@ const styles = StyleSheet.create({
     textAlign: "center",
     padding: Sizes.lg,
     fontStyle: "italic",
+  },
+  questionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Sizes.sm,
+  },
+  resultIndicator: {
+    fontSize: Sizes.caption,
+    fontWeight: "600",
+    paddingHorizontal: Sizes.xs,
+    paddingVertical: 2,
+    borderRadius: Sizes.xs,
+  },
+  correctIndicator: {
+    color: Colors.success,
+    backgroundColor: Colors.success + "20",
+  },
+  incorrectIndicator: {
+    color: Colors.error,
+    backgroundColor: Colors.error + "20",
+  },
+  questionText: {
+    fontSize: Sizes.body,
+    color: Colors.textDark,
+    marginBottom: Sizes.sm,
+    fontWeight: "500",
+  },
+  optionsContainer: {
+    marginBottom: Sizes.sm,
+  },
+  optionItem: {
+    padding: Sizes.sm,
+    marginBottom: Sizes.xs,
+    borderRadius: Sizes.xs,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  correctOption: {
+    borderColor: Colors.success,
+    backgroundColor: Colors.success + "10",
+  },
+  incorrectOption: {
+    borderColor: Colors.error,
+    backgroundColor: Colors.error + "10",
+  },
+  optionText: {
+    fontSize: Sizes.body,
+    color: Colors.textDark,
+  },
+  correctUserAnswer: {
+    color: Colors.success,
+    borderColor: Colors.success,
+  },
+  incorrectUserAnswer: {
+    color: Colors.error,
+    borderColor: Colors.error,
+  },
+  timeText: {
+    fontSize: Sizes.caption,
+    color: Colors.textLight,
+    fontStyle: "italic",
+    marginTop: Sizes.sm,
   },
 });
