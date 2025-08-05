@@ -159,6 +159,13 @@ function RootLayoutNav() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="allachievement/index"
+          options={{
+            title: "Thành tích",
+            headerShown: false,
+          }}
+        />
 
         {/* Sample screen - will be removed in final version */}
         <Stack.Screen
