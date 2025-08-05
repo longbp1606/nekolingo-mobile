@@ -307,7 +307,7 @@ export default function ExerciseResultScreen() {
 
             {showExplanations && (
               <View style={styles.explanationsContainer}>
-                <ScrollView style={styles.explanationsList}>
+                <View style={styles.explanationsList}>
                   {detailedResults.map((result, index) => (
                     <View key={index} style={styles.explanationItem}>
                       <View style={styles.questionHeader}>
@@ -378,7 +378,7 @@ export default function ExerciseResultScreen() {
                       </Text>
                     </View>
                   ))}
-                </ScrollView>
+                </View>
               </View>
             )}
           </Card>
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
   },
   explanationsList: {
-    maxHeight: 300,
+    // Removed maxHeight to allow proper scrolling within main ScrollView
   },
   explanationItem: {
     padding: Sizes.md,
